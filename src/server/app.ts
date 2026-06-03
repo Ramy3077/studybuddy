@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import { streamSSE } from 'hono/streaming';
 import { serveStatic } from '@hono/node-server/serve-static';
@@ -14,6 +14,15 @@ import { gradeAndRecord } from '../quiz/grade.js';
 import { buildWhyContext, streamWhy } from '../quiz/why.js';
 
 type Env = { Variables: AuthVars };
+
+/** Best-effort client IP from a trusted proxy header (X-Forwarded-For first hop,
+ * then X-Real-IP / CF-Connecting-IP). Falls back to 'unknown' (a single shared
+ * bucket) when there is no proxy header — still bounds brute force. */
+function clientIp(c: Context): string {
+  const xff = c.req.header('x-forwarded-for');
+  if (xff) return xff.split(',')[0]!.trim();
+  return c.req.header('x-real-ip') ?? c.req.header('cf-connecting-ip') ?? 'unknown';
+}
 
 const moduleIdCache = new Map<string, string>();
 async function moduleIdForSlug(slug: string): Promise<string | null> {
@@ -66,6 +75,8 @@ export function createApp() {
     display_name: z.string().min(1).max(80),
   });
   app.post('/api/auth/signup', async (c) => {
+    const rl = rateLimit(`signup:ip:${clientIp(c)}`, config.authRateLimitPerMin);
+    if (!rl.ok) return c.json({ error: 'too many signup attempts', retry_after: rl.retryAfter }, 429);
     const parsed = SignupBody.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return c.json({ error: 'invalid signup', details: parsed.error.flatten() }, 400);
     const { email, password, display_name } = parsed.data;
@@ -90,6 +101,12 @@ export function createApp() {
     const parsed = LoginBody.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return c.json({ error: 'invalid login' }, 400);
     const { email, password } = parsed.data;
+    // Throttle online brute-force (CWE-307) before the expensive verify: per IP,
+    // then per email. Both buckets are checked so neither dimension can be farmed.
+    const rlIp = rateLimit(`login:ip:${clientIp(c)}`, config.authRateLimitPerMin);
+    if (!rlIp.ok) return c.json({ error: 'too many login attempts', retry_after: rlIp.retryAfter }, 429);
+    const rlEmail = rateLimit(`login:email:${email.toLowerCase()}`, config.authRateLimitPerMin);
+    if (!rlEmail.ok) return c.json({ error: 'too many login attempts', retry_after: rlEmail.retryAfter }, 429);
     const { rows } = await adminPool.query<{ id: string; password_hash: string; display_name: string }>(
       'SELECT id, password_hash, display_name FROM profiles WHERE email = lower($1)',
       [email],

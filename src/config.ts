@@ -104,6 +104,10 @@ export const config = {
   aiRateLimitPerMin: int('AI_RATE_LIMIT_PER_MIN', 20),
   aiMaxBodyBytes: int('AI_MAX_BODY_BYTES', 16 * 1024),
   maxAnswerChars: int('MAX_ANSWER_CHARS', 4000),
+
+  // Auth brute-force guard: max login/signup attempts per minute, per IP and
+  // (for login) per email.
+  authRateLimitPerMin: int('AUTH_RATE_LIMIT_PER_MIN', 10),
 } as const;
 
 export type AppConfig = typeof config;
