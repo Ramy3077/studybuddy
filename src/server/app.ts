@@ -63,6 +63,13 @@ export function createApp() {
   const app = new Hono<Env>();
   app.use('/api/*', cors());
 
+  // Map any uncaught error to a JSON response (honouring a `status` hint) so an
+  // unexpected throw never leaks an HTML 500 from an /api route.
+  app.onError((err, c) => {
+    const status = Number.isInteger((err as any)?.status) ? (err as any).status : 500;
+    return c.json({ error: err.message || 'internal error' }, status);
+  });
+
   // ---- health -------------------------------------------------------------
   app.get('/api/health', (c) =>
     c.json({ ok: true, providers: { embedding: config.embeddingProvider, llm: config.llmProvider } }),
@@ -235,7 +242,7 @@ export function createApp() {
     const rl = rateLimit(`${userId}:why`, config.aiRateLimitPerMin);
     if (!rl.ok) return c.json({ error: 'rate limited', retry_after: rl.retryAfter }, 429);
     const questionId = c.req.query('question_id') ?? '';
-    if (!/^[0-9a-f-]{36}$/i.test(questionId)) return c.json({ error: 'invalid question_id' }, 400);
+    if (!z.string().uuid().safeParse(questionId).success) return c.json({ error: 'invalid question_id' }, 400);
     // The answer key is only revealed for a question the user has answered and
     // gotten wrong — never an oracle for un-attempted questions.
     const access = await questionAccess(userId, questionId);
@@ -255,7 +262,7 @@ export function createApp() {
     const rl = rateLimit(`${userId}:why`, config.aiRateLimitPerMin);
     if (!rl.ok) return c.json({ error: 'rate limited', retry_after: rl.retryAfter }, 429);
     const questionId = c.req.query('question_id') ?? '';
-    if (!/^[0-9a-f-]{36}$/i.test(questionId)) return c.json({ error: 'invalid question_id' }, 400);
+    if (!z.string().uuid().safeParse(questionId).success) return c.json({ error: 'invalid question_id' }, 400);
     const userAnswer = (c.req.query('answer') ?? '').slice(0, config.maxAnswerChars);
 
     const access = await questionAccess(userId, questionId);

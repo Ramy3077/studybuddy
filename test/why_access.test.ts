@@ -21,6 +21,21 @@ async function answer(token: string, body: object) {
   });
 }
 
+describe('/quiz/why* validates question_id before any DB call (returns 400, not 500)', () => {
+  it('rejects a malformed question_id with 400', async () => {
+    const user = await createUser();
+    cleanup.users.push(user.id);
+    // Bad shapes that the previous loose /^[0-9a-f-]{36}$/ regex would have let
+    // through to a Postgres uuid error (500).
+    for (const bad of ['not-a-uuid', '------------------------------------', '1234']) {
+      const ctx = await get(`/api/quiz/why/context?question_id=${encodeURIComponent(bad)}`, user.token);
+      expect(ctx.status).toBe(400);
+      const stream = await get(`/api/quiz/why?question_id=${encodeURIComponent(bad)}`, user.token);
+      expect(stream.status).toBe(400);
+    }
+  });
+});
+
 describe('The answer key is not an oracle — /quiz/why* is gated on a prior wrong attempt', () => {
   it('refuses to reveal citations/answer for an un-attempted question', async () => {
     const user = await createUser();
