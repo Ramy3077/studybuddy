@@ -22,14 +22,16 @@ export function countWords(s: string): number {
 }
 
 /**
- * True if `quote` appears verbatim inside `text`, tolerating only differences
- * in whitespace runs (newlines vs spaces). This is the grounding invariant for
- * evidence quotes: the quote must be a real, copied substring of a chunk.
+ * True if `quote` appears verbatim inside `text`, tolerating differences in
+ * whitespace runs (newlines vs spaces) and letter case. Case-folding keeps this
+ * consistent with the authored-import matcher (which case-folds), so the "Why?"
+ * panel preserves the authored evidence quote instead of falling back to a
+ * different passage on a pure case difference.
  */
 export function isVerbatimSubstring(quote: string, text: string): boolean {
-  const q = collapseWs(quote);
+  const q = collapseWs(quote).toLowerCase();
   if (q.length === 0) return false;
-  return collapseWs(text).includes(q);
+  return collapseWs(text).toLowerCase().includes(q);
 }
 
 /**

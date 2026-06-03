@@ -65,8 +65,9 @@ describe('cleanTranscript', () => {
 });
 
 describe('grounding helpers', () => {
-  it('isVerbatimSubstring tolerates only whitespace differences', () => {
+  it('isVerbatimSubstring tolerates whitespace and case differences', () => {
     expect(isVerbatimSubstring('gradient   descent', 'we use gradient descent here')).toBe(true);
+    expect(isVerbatimSubstring('Gradient Descent', 'we use gradient descent here')).toBe(true); // case-folded
     expect(isVerbatimSubstring('gradient ascent', 'we use gradient descent here')).toBe(false);
   });
   it('isCleanProse rejects page markers and markup, accepts prose', () => {
