@@ -1,0 +1,48 @@
+# Postgres + pgvector for StudyBuddy.
+#
+# Recommended workflow (host-run app, dockerised DB):
+#   docker compose up -d db
+#   npm install && npm run migrate && npm run seed -- --confirm
+#   npm run start
+#
+# Or bring up the API container too with the `full` profile:
+#   docker compose --profile full up --build
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: studybuddy_owner
+      POSTGRES_PASSWORD: owner_pw
+      POSTGRES_DB: studybuddy
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./db/bootstrap:/docker-entrypoint-initdb.d:ro
+      - studybuddy_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studybuddy_owner -d studybuddy"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    profiles: ["full"]
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://studybuddy_owner:owner_pw@db:5432/studybuddy
+      APP_DATABASE_URL: postgresql://studybuddy_app:app_pw@db:5432/studybuddy
+      JWT_SECRET: ${JWT_SECRET:-dev-insecure-change-me}
+      PORT: 8080
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-}
+    ports:
+      - "8080:8080"
+    command: ["npm", "run", "start"]
+
+volumes:
+  studybuddy_pgdata:

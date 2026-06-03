@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StudyBuddy — ML Revision</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>📚 StudyBuddy <small>· Machine Learning revision</small></h1>
+    <div id="userbar" hidden>
+      <span id="who"></span>
+      <button data-tab="quiz">Quiz</button>
+      <button data-tab="progress">Progress</button>
+      <button data-tab="leaderboard">Leaderboard</button>
+      <button data-tab="settings">Settings</button>
+      <button id="logout">Log out</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Auth -->
+    <section id="auth">
+      <div class="card">
+        <h2>Sign in</h2>
+        <p class="muted">New here? Pick an email + password (8+ chars) and click <b>Sign up</b>.</p>
+        <label>Email or username <input id="email" type="text" autocomplete="username" /></label>
+        <label>Password <input id="password" type="password" autocomplete="current-password" /></label>
+        <label>Display name (sign up) <input id="display_name" type="text" value="Student" /></label>
+        <div class="row">
+          <button id="signup">Sign up</button>
+          <button id="login" class="secondary">Log in</button>
+        </div>
+        <p class="muted">Dev admin login: <b>admin</b> / <b>admin</b> (local testing only).</p>
+        <p id="auth-error" class="error"></p>
+      </div>
+    </section>
+
+    <!-- Quiz -->
+    <section id="quiz" class="tab" hidden>
+      <div id="enroll-card" class="card" hidden>
+        <p>You're not enrolled in <b>Machine Learning</b> yet.</p>
+        <button id="enroll">Enrol in Machine Learning</button>
+      </div>
+      <div id="quiz-card" class="card" hidden>
+        <div class="qmeta">
+          <span id="q-concept" class="pill"></span>
+          <span id="q-reason" class="pill muted"></span>
+        </div>
+        <h2 id="q-text"></h2>
+        <form id="q-form"></form>
+        <div class="row">
+          <button id="submit">Submit answer</button>
+          <button id="skip" class="secondary">Skip</button>
+        </div>
+        <div id="result" hidden>
+          <p id="verdict"></p>
+          <p id="feedback" class="muted"></p>
+          <details id="reveal"><summary>Reference answer & explanation</summary>
+            <p><b>Answer:</b> <span id="correct-answer"></span></p>
+            <p id="explanation" class="muted"></p>
+          </details>
+          <button id="why" class="secondary" hidden>🔍 Why? (cite the source)</button>
+          <div id="why-box" class="why" hidden>
+            <div id="why-citations"></div>
+            <p id="why-prose"></p>
+          </div>
+          <div class="row"><button id="next">Next question →</button></div>
+        </div>
+      </div>
+      <p id="quiz-empty" class="muted" hidden>No questions available. Run the ingestion seed first.</p>
+    </section>
+
+    <!-- Progress -->
+    <section id="progress" class="tab" hidden>
+      <div class="card">
+        <h2>Your confidence</h2>
+        <p id="progress-totals" class="muted"></p>
+        <table id="progress-table"><thead><tr><th>Concept</th><th>Week</th><th>Confidence</th><th>Last tested</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- Leaderboard -->
+    <section id="leaderboard" class="tab" hidden>
+      <div class="card">
+        <h2>Leaderboard</h2>
+        <p class="muted">Server-authoritative — derived from graded attempts. Cannot be set by the client.</p>
+        <table id="lb-table"><thead><tr><th>#</th><th>Student</th><th>Correct</th><th>Answered</th><th>Accuracy</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- Settings / BYOK -->
+    <section id="settings" class="tab" hidden>
+      <div class="card">
+        <h2>Settings</h2>
+        <h3>Bring your own key (optional)</h3>
+        <p class="muted">If set, "Why?" explanations are generated <b>in your browser</b> using your Anthropic key. The key is stored only in this browser's localStorage and is <b>never sent to the StudyBuddy server</b>.</p>
+        <label><input type="checkbox" id="byok-enabled" /> Use my Anthropic key for explanations</label>
+        <label>Anthropic API key <input id="byok-key" type="password" placeholder="sk-ant-..." /></label>
+        <label>Model <input id="byok-model" type="text" value="claude-sonnet-4-6" /></label>
+        <button id="save-settings">Save</button>
+        <p id="settings-saved" class="muted"></p>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

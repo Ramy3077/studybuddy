@@ -1,0 +1,41 @@
+{
+  "name": "studybuddy",
+  "version": "1.0.0",
+  "description": "RAG-grounded exam-revision web app for a university Machine Learning module",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "migrate": "tsx src/cli/migrate.ts",
+    "discover": "tsx src/cli/discover.ts",
+    "ingest": "tsx src/cli/ingest.ts",
+    "extract-concepts": "tsx src/cli/extract-concepts.ts",
+    "gen-questions": "tsx src/cli/gen-questions.ts",
+    "seed": "tsx src/cli/seed.ts",
+    "seed:admin": "tsx src/cli/seed-admin.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "import-authored": "tsx src/cli/import-authored.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "dotenv": "^16.4.7",
+    "hono": "^4.6.14",
+    "pdfjs-dist": "^4.9.155",
+    "pg": "^8.13.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
