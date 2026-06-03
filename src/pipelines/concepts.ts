@@ -22,8 +22,12 @@ interface WeekChunk {
   text: string;
 }
 
-const MAX_CHUNKS_PER_CALL = 45;
-const CHUNK_CHAR_CAP = 1500;
+// Pack chunks into each extraction call up to this many characters of source
+// text (~12k tokens of input), sending the FULL chunk text. A hard chunk-count
+// cap keeps any single call bounded. Previously each chunk was truncated to the
+// first 1500 chars (~30%), so concepts taught later in a chunk were never seen.
+const CHAR_BUDGET_PER_CALL = 48_000;
+const MAX_CHUNKS_PER_CALL = 40;
 
 function normalizeKey(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
@@ -46,7 +50,7 @@ const SYSTEM = `You are a meticulous teaching assistant extracting canonical rev
 function buildPrompt(week: number, batch: WeekChunk[]) {
   const lines = batch.map(
     (c) =>
-      `--- chunk id=${c.id} | code=${c.code ?? '-'} | type=${c.source_type} | primary=${c.is_primary} ---\n${c.text.slice(0, CHUNK_CHAR_CAP)}`,
+      `--- chunk id=${c.id} | code=${c.code ?? '-'} | type=${c.source_type} | primary=${c.is_primary} ---\n${c.text}`,
   );
   const user = `Week ${week} source chunks:\n\n${lines.join('\n\n')}\n\nExtract 5-10 canonical concepts taught this week. Prefer content from primary lecture (a/b) and notes; treat tutorial/revision/assessment chunks as secondary. Merge a concept that appears across slides + transcript into ONE concept.
 
@@ -63,7 +67,7 @@ async function extractBatch(week: number, batch: WeekChunk[]): Promise<ConceptDr
   const raw = await llm.complete({
     system: SYSTEM,
     messages: [{ role: 'user', content: buildPrompt(week, batch) }],
-    maxTokens: 2500,
+    maxTokens: 4000,
     temperature: 0,
     mock: {
       task: 'extract_concepts',
@@ -101,9 +105,23 @@ export async function extractConceptsForWeek(moduleId: string, week: number): Pr
   if (chunks.length === 0) return [];
 
   const drafts: ConceptDraft[] = [];
-  for (let i = 0; i < chunks.length; i += MAX_CHUNKS_PER_CALL) {
-    drafts.push(...(await extractBatch(week, chunks.slice(i, i + MAX_CHUNKS_PER_CALL))));
+  // Pack full-text chunks into batches bounded by total characters AND count.
+  let batch: WeekChunk[] = [];
+  let chars = 0;
+  const flush = async () => {
+    if (batch.length === 0) return;
+    drafts.push(...(await extractBatch(week, batch)));
+    batch = [];
+    chars = 0;
+  };
+  for (const chunk of chunks) {
+    if (batch.length > 0 && (chars + chunk.text.length > CHAR_BUDGET_PER_CALL || batch.length >= MAX_CHUNKS_PER_CALL)) {
+      await flush();
+    }
+    batch.push(chunk);
+    chars += chunk.text.length;
   }
+  await flush();
   return drafts;
 }
 
