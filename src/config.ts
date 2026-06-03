@@ -16,34 +16,52 @@ function optional(name: string): string | undefined {
   return v === undefined || v === '' ? undefined : v;
 }
 
-function int(name: string, fallback: number): number {
-  const v = process.env[name];
-  if (v === undefined || v === '') return fallback;
-  const n = Number(v);
-  if (!Number.isFinite(n)) throw new Error(`Env ${name} must be a number, got ${v}`);
+/**
+ * Parse an integer environment variable, enforcing it is a whole number >= min.
+ * Rejects 0 / negative / fractional / non-numeric values at boot (fail fast)
+ * instead of silently degrading at runtime (e.g. a 0 rate limit blocking all
+ * requests). Exported pure for testing.
+ */
+export function parseIntEnv(name: string, raw: string | undefined, fallback: number, min = 1): number {
+  if (raw === undefined || raw === '') return fallback;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < min) {
+    throw new Error(`Env ${name} must be an integer >= ${min}, got "${raw}"`);
+  }
   return n;
+}
+
+function int(name: string, fallback: number, min = 1): number {
+  return parseIntEnv(name, process.env[name], fallback, min);
 }
 
 const hasOpenAI = !!optional('OPENAI_API_KEY');
 const hasAnthropic = !!optional('ANTHROPIC_API_KEY');
 
-const INSECURE_JWT_DEFAULT = 'dev-insecure-change-me';
+export const INSECURE_JWT_DEFAULT = 'dev-insecure-change-me';
 const isProd = process.env.NODE_ENV === 'production';
 
-function resolveJwtSecret(): string {
-  const provided = optional('JWT_SECRET');
+/**
+ * Resolve + validate the JWT signing secret. Exported pure for testing.
+ * The built-in dev default is public (it ships in the repo / .env.example), so
+ * it can never be a real signing key — it is rejected UNCONDITIONALLY. A custom
+ * but short (<32 char) secret is allowed in dev (with a warning) and rejected
+ * in production.
+ */
+export function validateJwtSecret(provided: string | undefined, prod: boolean): string {
   const secret = provided ?? INSECURE_JWT_DEFAULT;
-  const weak = secret === INSECURE_JWT_DEFAULT || secret.length < 32;
-  if (weak) {
-    if (isProd) {
-      throw new Error(
-        'JWT_SECRET is missing, the built-in dev default, or shorter than 32 chars. ' +
-          'Refusing to start in production. Set a strong random JWT_SECRET (e.g. `openssl rand -hex 32`).',
-      );
+  if (secret === INSECURE_JWT_DEFAULT) {
+    throw new Error(
+      'JWT_SECRET is unset or the built-in dev default. Set a strong random secret, e.g. `openssl rand -hex 32`.',
+    );
+  }
+  if (secret.length < 32) {
+    if (prod) {
+      throw new Error('JWT_SECRET must be at least 32 characters in production. Use `openssl rand -hex 32`.');
     }
     console.warn(
-      '\x1b[33m[security] Using a weak/default JWT_SECRET. This is fine for local dev only — ' +
-        'set a strong random JWT_SECRET before any real deployment.\x1b[0m',
+      '\x1b[33m[security] JWT_SECRET is shorter than 32 chars — fine for local dev only; ' +
+        'use a 32+ char random secret before any real deployment.\x1b[0m',
     );
   }
   return secret;
@@ -57,8 +75,9 @@ export const config = {
   databaseUrl: str('DATABASE_URL', 'postgresql://studybuddy_owner:owner_pw@localhost:5433/studybuddy'),
   appDatabaseUrl: str('APP_DATABASE_URL', 'postgresql://studybuddy_app:app_pw@localhost:5433/studybuddy'),
 
-  // Auth. Refuses the dev default / short secrets in production (see above).
-  jwtSecret: resolveJwtSecret(),
+  // Auth. Rejects the built-in dev default unconditionally; short secrets are a
+  // dev-only warning and a hard error in production (see validateJwtSecret).
+  jwtSecret: validateJwtSecret(optional('JWT_SECRET'), isProd),
   jwtTtlSeconds: int('JWT_TTL_SECONDS', 60 * 60 * 24 * 7),
 
   // HTTP

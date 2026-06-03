@@ -18,7 +18,9 @@ per-concept confidence with decay, and — when an answer is wrong — explains
 Prereqs: Docker, Node ≥ 20.
 
 ```bash
-cp .env.example .env                 # defaults work out of the box
+cp .env.example .env
+# Set a strong signing secret — the app refuses to start without one:
+printf '\nJWT_SECRET=%s\n' "$(openssl rand -hex 32)" >> .env
 docker compose up -d --wait db       # Postgres 16 + pgvector on :5433
 npm install
 

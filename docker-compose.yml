@@ -32,9 +32,13 @@ services:
       db:
         condition: service_healthy
     environment:
+      # Production posture for the containerised API: a strong JWT_SECRET MUST be
+      # provided (compose refuses to start otherwise) and the app boots in
+      # production mode, where weak/default secrets are rejected.
+      NODE_ENV: production
       DATABASE_URL: postgresql://studybuddy_owner:owner_pw@db:5432/studybuddy
       APP_DATABASE_URL: postgresql://studybuddy_app:app_pw@db:5432/studybuddy
-      JWT_SECRET: ${JWT_SECRET:-dev-insecure-change-me}
+      JWT_SECRET: ${JWT_SECRET:?set a strong JWT_SECRET, e.g. JWT_SECRET=$(openssl rand -hex 32)}
       PORT: 8080
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
