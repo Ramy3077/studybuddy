@@ -340,6 +340,7 @@ function applyGrade(r) {
   $('explanation').textContent = r.explanation || '';
   renderMath($('correct-answer')); renderMath($('explanation'));
   $('why').hidden = !!r.is_correct; // why only offered when wrong (and server-gated)
+  if (!r.is_correct) explainWhy(); // open the grounded explanation straight away
 
   // session
   state.session.correct += r.is_correct ? 1 : 0;
@@ -378,7 +379,7 @@ async function explainWhy() {
   try {
     if (state.settings.byok && state.settings.key) {
       const ctx = await api(`/api/quiz/why/context?question_id=${qid}`);
-      renderCitations(ctx.citations);
+      renderCitations(ctx.citations, ctx.retrieval);
       await streamByok(ctx);
     } else {
       await streamServerWhy(qid);
@@ -395,9 +396,13 @@ function whyError(msg) {
   const s = $('why-status'); s.hidden = false; s.textContent = msg;
   toast(msg);
 }
-function renderCitations(citations) {
+function renderCitations(citations, retrieval) {
   const wrap = $('why-citations'); wrap.innerHTML = '';
-  (citations || []).forEach((c) => {
+  (citations || []).forEach((c, i) => {
+    if (i === 1) {
+      wrap.appendChild(el('p', { class: 'related-head', text: 'Related passages' }));
+      if (retrieval === 'lexical') wrap.appendChild(el('p', { class: 'related-note', text: 'This demo finds related passages with offline keyword (BM25) matching. The full app uses OpenAI embeddings.' }));
+    }
     const loc = c.locator && c.locator.kind === 'slides'
       ? `slides p.${c.locator.start_page}–${c.locator.end_page}`
       : (c.locator ? `chars ${c.locator.char_start}–${c.locator.char_end}${c.locator.heading ? ' · ' + c.locator.heading : ''}` : '');
@@ -417,7 +422,7 @@ async function streamServerWhy(qid) {
   }
   let streamErr = null;
   await parseSse(res.body, (ev, data) => {
-    if (ev === 'citation') { try { renderCitations(JSON.parse(data).citations); } catch {} }
+    if (ev === 'citation') { try { { const j = JSON.parse(data); renderCitations(j.citations, j.retrieval); }; } catch {} }
     else if (ev === 'token') { try { $('why-prose').textContent += JSON.parse(data).text; } catch {} }
     else if (ev === 'error') { try { streamErr = JSON.parse(data).error; } catch { streamErr = 'stream error'; } } // BUG FIX #2: in-stream error event
   });

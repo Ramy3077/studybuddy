@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { bm25Rank, tokenize } from '../src/lexical.js';
 import { chunkByWords } from '../src/ingest/chunk.js';
 import { cleanObsidian } from '../src/ingest/markdown.js';
 import { cleanTranscript } from '../src/ingest/transcript.js';
@@ -130,5 +131,37 @@ describe('discovery filename parsing', () => {
     expect(parseTranscriptName('Tutorial - 9c_Captions_English (United States).txt')).toMatchObject({ week: 9, kind: 'tutorial' });
     expect(parseTranscriptName('12-assessment-support-week_Captions_English (United States).txt')).toMatchObject({ week: 12, kind: 'assessment_support' });
     expect(parseTranscriptName('6a - Revision Part 1 - 04 November 2025 at 15_48_13_Captions_English (United States).txt')).toMatchObject({ week: 6, kind: 'revision' });
+  });
+});
+
+
+describe('BM25 lexical retrieval (offline demo provider)', () => {
+  const docs = [
+    'Gradient descent updates parameters by stepping against the gradient of the loss, scaled by the learning rate.',
+    'Regularisation adds a penalty on weight size to reduce overfitting on the training data.',
+    'K-means clustering assigns each point to the nearest centroid and recomputes the centroids.',
+  ];
+
+  it('tokenizes to stemmed content words', () => {
+    expect(tokenize('The learning rates are Updating')).toEqual(['learn', 'rate', 'updat']);
+  });
+
+  it('ranks the on-topic chunk first', () => {
+    const hits = bm25Rank('how does the learning rate affect gradient descent steps', docs);
+    expect(hits[0]?.index).toBe(0);
+  });
+
+  it('returns nothing when no chunk is relevant', () => {
+    expect(bm25Rank('quantum chromodynamics lagrangian', docs)).toEqual([]);
+  });
+
+  it('drops weak single-word matches', () => {
+    // "data" appears in one chunk only: one shared term is below the floor
+    expect(bm25Rank('what is a database index', docs)).toEqual([]);
+  });
+
+  it('drops hits far below the best hit', () => {
+    const hits = bm25Rank('penalty overfitting weight loss', docs, { minRelative: 0.9, minMatched: 1, minScore: 0 });
+    expect(hits.map((h) => h.index)).toEqual([1]);
   });
 });

@@ -119,3 +119,23 @@ describe('Leaderboard integrity — scores are server-authoritative', () => {
     ).rejects.toThrow(/permission denied/i);
   });
 });
+
+describe('Leaderboard excludes throwaway guest accounts', () => {
+  it('a guest with graded attempts is not listed, a real user is', async () => {
+    const real = await createUser('Real Student');
+    const guest = await createUser('Guest');
+    await adminPool.query('UPDATE profiles SET email=$1 WHERE id=$2', [`guest-${Date.now()}@guest.studybuddy.invalid`, guest.id]);
+    const concept = await createConcept();
+    const q = await createMcq(concept, 'pick a', ['a', 'b', 'c', 'd'], 'a');
+    cleanup.users.push(real.id, guest.id); cleanup.concepts.push(concept);
+    await enroll(real.id); await enroll(guest.id);
+
+    await answer(real.token, { question_id: q, answer: 'a' });
+    await answer(guest.token, { question_id: q, answer: 'a' });
+
+    const res = await app.request('/api/leaderboard?limit=200', { headers: { authorization: `Bearer ${real.token}` } });
+    const { leaderboard } = (await res.json()) as { leaderboard: any[] };
+    expect(leaderboard.some((r) => r.user_id === real.id)).toBe(true);
+    expect(leaderboard.some((r) => r.user_id === guest.id)).toBe(false);
+  });
+});

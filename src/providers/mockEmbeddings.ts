@@ -3,7 +3,7 @@ import type { EmbeddingProvider } from './types.js';
 
 // Function words carry no topic signal; dropping them keeps the hashed
 // bag-of-words vectors about content words, so neighbours are on-topic.
-const STOPWORDS = new Set(
+export const STOPWORDS = new Set(
   ('a an and are as at be been but by can do does each for from has have how if in into is it its more most ' +
     'no not of on one or so such than that the their them then there these this those to too up was we what when ' +
     'which while who why will with would you your also only other over same very').split(' '),

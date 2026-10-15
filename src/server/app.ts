@@ -149,7 +149,7 @@ export function createApp() {
     if (!global.ok) return c.json({ error: 'demo is busy, try the demo login instead', retry_after: global.retryAfter }, 429);
     const tag = randomBytes(6).toString('hex');
     const email = `guest-${tag}@${GUEST_EMAIL_DOMAIN}`;
-    const display_name = `Guest ${tag.slice(0, 4)}`;
+    const display_name = 'Guest';
     // Random unusable password: guests can only ever use the token issued here.
     const password_hash = await hashPassword(randomBytes(24).toString('hex'));
     const { rows } = await adminPool.query<{ id: string }>(
@@ -320,6 +320,7 @@ export function createApp() {
           correct_answer: ctx.correct_answer,
           concept_name: ctx.concept_name,
           citations: ctx.citations,
+          retrieval: ctx.retrieval,
         }),
       });
       try {

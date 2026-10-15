@@ -6,6 +6,8 @@ Exam revision that quotes your own notes back at you. StudyBuddy ingests slides,
 transcripts, turns them into grounded quiz questions, and when you get one wrong it shows the exact
 passage that answers it.
 
+> The hosted demo runs on offline providers (keyword retrieval and a scripted explainer, no paid API calls). The real app uses OpenAI embeddings and Claude.
+
 **Live demo:** <https://studybuddy-production-1808.up.railway.app>
 Click **Try the demo** for a throwaway guest account, or log in with `demo@example.com` / `revise-demo`.
 
@@ -23,7 +25,7 @@ functions, gradient descent, overfitting, regularisation, k-means). They live in
 - **Quizzes** you with spaced repetition: untested and weak concepts first, confidence decays over
   time (about a 14-day half-life).
 - **Explains wrong answers** by quoting the source passage, with the week and source title.
-- **Leaderboard** computed on the server from graded attempts.
+- **Leaderboard** computed on the server from graded attempts (guest accounts are excluded).
 
 ## How grounding works
 
@@ -35,7 +37,8 @@ the quiz.
 When you answer wrong, the "why" panel is built on the server from real chunks, not from model output:
 
 1. the chunk that contains the question's evidence quote, with that quote;
-2. up to two more chunks from a pgvector cosine search on the question and answer.
+2. up to two more chunks from a pgvector cosine search on the question and answer (in the offline
+   demo: BM25 keyword scoring, with a relevance threshold so weak matches are dropped).
 
 The explanation text is written from those passages. The citations, quotes and locations come from
 the database, so they can always be checked against the source.
@@ -56,8 +59,8 @@ Browser (static SPA) ──HTTP + JWT──▶ Hono API ──▶ quiz: select, 
 - **Backend:** Node 20, TypeScript, [Hono](https://hono.dev), run with `tsx`.
 - **Database:** Postgres 16+ with pgvector (HNSW cosine index). Plain SQL migrations.
 - **Providers:** OpenAI embeddings and Anthropic Claude behind small interfaces, each with a
-  deterministic mock so everything runs without keys. The mock embedder is a hashed bag of words
-  (stopwords removed), so vector search still finds related passages.
+  deterministic mock so everything runs without keys. The offline retrieval used by the demo is BM25 keyword
+  scoring over chunks with a relevance floor, so weak matches are not shown.
 - **Frontend:** one static page in `web/`, no build step.
 
 ## Security

@@ -2,6 +2,7 @@ import { adminPool } from '../db/pool.js';
 import { getEmbeddingProvider } from '../providers/embeddings.js';
 import { getLlmProvider } from '../providers/llm.js';
 import { getChunksByIds, sourceLabel, vectorSearch } from '../retrieval.js';
+import { lexicalSearch } from '../lexical.js';
 import { cleanVerbatimSpan, isVerbatimSubstring } from '../util/text.js';
 import type { Locator, RetrievedChunk } from '../types.js';
 
@@ -24,6 +25,8 @@ export interface WhyContext {
   explanation: string;
   concept_name: string;
   citations: WhyCitation[];
+  /** How related passages were found: offline BM25 (demo) or embedding search. */
+  retrieval: 'lexical' | 'vector';
 }
 
 function toCitation(c: RetrievedChunk, quote: string): WhyCitation {
@@ -77,8 +80,12 @@ export async function buildWhyContext(questionId: string): Promise<WhyContext> {
 
   // 2) Additional support via vector search over the question + correct answer.
   try {
-    const emb = (await getEmbeddingProvider().embedBatch([`${q.question}\n${q.correct_answer}`]))[0]!;
-    const hits = await vectorSearch(adminPool, emb, { moduleId: q.module_id, limit: 5 });
+    const queryText = `${q.question}\n${q.correct_answer}`;
+    const provider = getEmbeddingProvider();
+    const hits =
+      provider.name === 'mock'
+        ? await lexicalSearch(adminPool, queryText, { moduleId: q.module_id, limit: 5 })
+        : await vectorSearch(adminPool, (await provider.embedBatch([queryText]))[0]!, { moduleId: q.module_id, limit: 5 });
     for (const h of hits) {
       if (seen.has(h.id)) continue;
       const quote = cleanVerbatimSpan(h.text, 8, 28);
@@ -100,6 +107,7 @@ export async function buildWhyContext(questionId: string): Promise<WhyContext> {
     explanation: q.explanation ?? '',
     concept_name: q.concept_name,
     citations,
+    retrieval: getEmbeddingProvider().name === 'mock' ? 'lexical' : 'vector',
   };
 }
 
