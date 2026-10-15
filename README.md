@@ -65,7 +65,7 @@ Browser (static SPA) ──HTTP + JWT──▶ Hono API ──▶ quiz: select, 
 
 ## Security
 
-These are enforced in code and covered by the 60 tests in `test/`:
+These are enforced in code and covered by the tests in `test/`:
 
 - **Two database roles.** Migrations, ingestion and grading use the owner role. Every user request runs
   as `studybuddy_app`, which has Row Level Security forced on user tables. `withUser()` sets
@@ -83,8 +83,40 @@ These are enforced in code and covered by the 60 tests in `test/`:
 - **Auth.** scrypt password hashes and HS256 JWTs. The app refuses to start with a missing, default or
   (in production) short `JWT_SECRET`.
 
-The rate limiter is in memory, which is fine for one instance. Several instances would need a shared
-store such as Redis.
+## Design decisions and trade-offs
+
+- **Row Level Security with a separate app role, not only `WHERE user_id = ?` in queries.** Filtering in
+  application code was the simpler option, but one missed filter leaks another user's data. With RLS the
+  database refuses the rows. Cost: two roles and two connection pools, every user request runs in a
+  transaction that sets `app.current_user_id`, and privileged work (grading, ingest) has to go through
+  the owner pool on purpose.
+- **Generated questions must quote the notes word for word.** The alternative was to accept whatever the
+  model writes, or check similarity to the notes. An exact substring check (ignoring case and
+  whitespace) is easy to reason about and gives the "why" panel a real passage to show. Cost: good
+  questions that paraphrase the notes are dropped, so a module ends up with fewer questions.
+- **BM25 keyword search for the offline demo instead of embeddings.** The public demo makes no paid API
+  calls, so it has no real embeddings. Its hashed word vectors treat common and rare words alike and give
+  no natural cut-off, so the demo scores chunks with BM25, which weights rare words and drops weak
+  matches below a score floor. With an OpenAI key the app uses pgvector cosine search. Cost: BM25 misses synonyms and
+  paraphrases, and it loads every chunk in the module per request, which only works for a small corpus.
+- **A fresh guest account per visitor instead of one shared demo login.** Visitors do not see each
+  other's progress or share rate-limit buckets. Guest creation is limited per IP and globally per hour,
+  and guests older than 3 days are deleted. Cost: a database row per visitor, and the cleanup runs
+  when the server boots, so guests pile up between deploys.
+- **The server writes scores, clients never do.** The app role has no insert grant on `attempts`, so the
+  answer endpoint grades and records in one place. Cost: every answer is a server round trip, and
+  free-text answers need a model call to grade.
+
+## Known limitations
+
+- Rate limits are held in memory, so they are per instance and reset on restart. Several instances would
+  need a shared store such as Redis.
+- Expired guest accounts are only removed when the server boots.
+- The offline demo's explanation is a fixed template filled with the cited passages, not written by a
+  model.
+- BM25 retrieval scans the whole module per request.
+- JWTs cannot be revoked before they expire.
+- One module per deployment by default (`MODULE_SLUG`).
 
 ## Run it locally
 
@@ -112,10 +144,15 @@ apply migrations, seed the demo idempotently, then serve.
 ### Tests
 
 ```bash
-npm test        # 60 tests across 8 files; needs the database from docker compose
+npm test        # 61 tests across 9 files; needs the database from docker compose
 ```
 
 CI runs typecheck, migrations and the full suite against a pgvector service container.
+
+`test/flow.test.ts` is the end-to-end check over HTTP: it ingests a real demo note into a throwaway
+module, then a guest logs in, fetches a question, answers it wrong, and asks why. It passes only if the
+explanation contains the question's evidence quote and that quote appears word for word in the note on
+disk. Tests always use the offline providers, even when API keys are set.
 
 ## Deploying
 
@@ -146,5 +183,5 @@ src/server/    Hono app, rate limiting
 src/demo/      idempotent demo seed
 src/cli/       migrate, ingest, seed, boot
 web/           static SPA
-test/          RLS, leaderboard integrity, grading, answer-key gating, units
+test/          end-to-end flow, RLS, leaderboard integrity, grading, answer-key gating, units
 ```
