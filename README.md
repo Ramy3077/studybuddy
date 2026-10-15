@@ -65,7 +65,7 @@ Browser (static SPA) ──HTTP + JWT──▶ Hono API ──▶ quiz: select, 
 
 ## Security
 
-These are enforced in code and covered by tests in `test/`:
+These are enforced in code and covered by the 60 tests in `test/`:
 
 - **Two database roles.** Migrations, ingestion and grading use the owner role. Every user request runs
   as `studybuddy_app`, which has Row Level Security forced on user tables. `withUser()` sets
@@ -112,7 +112,7 @@ apply migrations, seed the demo idempotently, then serve.
 ### Tests
 
 ```bash
-npm test        # needs the database from docker compose
+npm test        # 60 tests across 8 files; needs the database from docker compose
 ```
 
 CI runs typecheck, migrations and the full suite against a pgvector service container.

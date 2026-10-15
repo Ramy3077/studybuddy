@@ -110,14 +110,15 @@ async function guest() {
 async function loadDemoInfo() {
   try {
     const d = await fetch('/api/demo').then((r) => r.json());
-    if (d.guests) $('guest').hidden = false;
+    if (d.guests) { $('guest').hidden = false; $('guest-sub').hidden = false; $('or-line').hidden = false; $('login').className = 'btn ghost'; }
+    else $('login').className = 'btn primary';
     if (d.account) {
       $('demo-email').textContent = d.account.email;
       $('demo-pass').textContent = d.account.password;
       $('demo-creds').hidden = false;
       $('demo-fill').onclick = () => { $('email').value = d.account.email; $('password').value = d.account.password; $('login').focus(); };
     }
-    $('demo-box').hidden = !(d.guests || d.account);
+    $('demo-box').hidden = !d.guests;
   } catch { /* demo info is optional */ }
 }
 function setSession(token, user) {
@@ -148,9 +149,15 @@ function showScreen(name) {
 /* ============================ DASHBOARD ============================ */
 function setGreeting() {
   const h = new Date().getHours();
-  const g = h >= 23 || h < 5 ? 'Burning the midnight oil' : h < 12 ? 'Good morning' : h < 18 ? 'Afternoon session' : 'Evening revision';
+  // Greeting and section title come from the same local hour so they never disagree.
+  const [g, t] = h >= 23 || h < 5 ? ['Burning the midnight oil', "Tonight's revision"]
+    : h < 12 ? ['Good morning', "This morning's revision"]
+    : h < 18 ? ['Good afternoon', "This afternoon's revision"]
+    : ['Good evening', "Tonight's revision"];
   $('greeting').textContent = g;
+  $('screen-title').textContent = t;
 }
+function isGuest() { return !!(state.user && /@guest\.studybuddy\.invalid$/.test(state.user.email || '')); }
 function daysUntilExam() {
   if (!state.settings.exam) return null;
   const d = new Date(state.settings.exam + 'T00:00:00');
@@ -200,6 +207,7 @@ function buildDashboard({ days, avg, tested, weakest, totals }) {
       el('div', { class: 'stat' }, el('div', { class: 'n', text: String(tested) }), el('div', { class: 'l', text: 'concepts' }))));
   grid.appendChild(mod);
 
+  if (isGuest()) grid.appendChild(el('p', { class: 'demo-sample', text: 'Demo account: some topics are pre-filled with sample progress so you can see the Atlas and Ranks. Your own answers add to it.' }));
   return grid;
 }
 
@@ -468,6 +476,7 @@ async function loadProgress() {
     $('progress-totals').textContent = d.totals && d.totals.answered
       ? `${d.totals.correct} of ${d.totals.answered} correct · ${concepts.length} concept${concepts.length === 1 ? '' : 's'} tracked`
       : '';
+    if (isGuest() && concepts.length) $('progress-totals').textContent += ' · includes demo sample progress';
     if (!concepts.length) { body.innerHTML = emptyState('Nothing tracked yet', 'Take a quiz to start mapping your confidence across the module.'); return; }
     body.innerHTML = '';
     const atlas = el('div', { class: 'atlas' });

@@ -5,6 +5,7 @@ import { adminPool } from '../db/pool.js';
 import { hashPassword } from '../auth/password.js';
 import { ingestVault } from '../ingest/ingest.js';
 import { importAuthored } from '../pipelines/authored.js';
+import { nextScore } from '../quiz/knowledge.js';
 
 export const GUEST_EMAIL_DOMAIN = 'guest.studybuddy.invalid';
 const GUEST_MAX_AGE_DAYS = 3;
@@ -13,6 +14,66 @@ async function moduleId(): Promise<string> {
   const { rows } = await adminPool.query<{ id: string }>('SELECT id FROM modules WHERE slug = $1', [config.moduleSlug]);
   if (!rows[0]) throw new Error(`module ${config.moduleSlug} missing (run migrations first)`);
   return rows[0].id;
+}
+
+/** Marker stored in attempts.user_answer so seeded rows are never mistaken for real answers. */
+export const DEMO_SEED_ANSWER = '[demo seed]';
+
+/**
+ * A realistic spread of mastery and recency: [outcomes oldest to newest, days ago of each].
+ * Final scores come out strong, solid, due for review, weak, and faded.
+ */
+const DEMO_PROFILES: { outcomes: boolean[]; daysAgo: number[] }[] = [
+  { outcomes: [false, true, true, true], daysAgo: [7, 5, 3, 1] }, // strong, fresh
+  { outcomes: [true, true, false, true], daysAgo: [9, 6, 4, 2] }, // solid
+  { outcomes: [false, true, true], daysAgo: [14, 12, 9] }, // decent but due for review
+  { outcomes: [true, false, false], daysAgo: [6, 3, 1] }, // weak, recently missed
+  { outcomes: [true, true], daysAgo: [20, 17] }, // fading with time
+  { outcomes: [false, true], daysAgo: [8, 5] }, // middling
+];
+
+/**
+ * Gives a new guest a few concepts already studied so Atlas, Ranks and Desk are not empty.
+ * Rows are real attempts and knowledge (so every screen behaves normally) but each attempt
+ * is tagged DEMO_SEED_ANSWER. Concepts are spread across the module; some stay untested.
+ * Returns the number of concepts seeded.
+ */
+export async function seedGuestProgress(userId: string, now: number = Date.now()): Promise<number> {
+  const mid = await moduleId();
+  const { rows: concepts } = await adminPool.query<{ id: string; qid: string }>(
+    `SELECT c.id, (SELECT q.id FROM questions q WHERE q.concept_id = c.id ORDER BY q.id LIMIT 1) AS qid
+       FROM concepts c
+      WHERE c.module_id = $1 AND c.status = 'live'
+        AND EXISTS (SELECT 1 FROM questions q WHERE q.concept_id = c.id)
+      ORDER BY c.week NULLS LAST, c.name`,
+    [mid],
+  );
+  const count = Math.min(DEMO_PROFILES.length, concepts.length);
+  const DAY = 86_400_000;
+  for (let i = 0; i < count; i++) {
+    const concept = concepts[Math.floor((i * concepts.length) / count)]!;
+    const prof = DEMO_PROFILES[i]!;
+    let score: number | null = null;
+    let last: Date | null = null;
+    const history: { at: string; is_correct: boolean; score: number }[] = [];
+    for (let j = 0; j < prof.outcomes.length; j++) {
+      const at = now - prof.daysAgo[j]! * DAY;
+      score = nextScore(score, last, prof.outcomes[j]!, at);
+      last = new Date(at);
+      history.push({ at: last.toISOString(), is_correct: prof.outcomes[j]!, score: Number(score.toFixed(4)) });
+      await adminPool.query(
+        `INSERT INTO attempts (user_id, question_id, concept_id, is_correct, user_answer, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [userId, concept.qid, concept.id, prof.outcomes[j], DEMO_SEED_ANSWER, last],
+      );
+    }
+    await adminPool.query(
+      `INSERT INTO knowledge (user_id, concept_id, score, last_tested, history) VALUES ($1,$2,$3,$4,$5::jsonb)
+       ON CONFLICT (user_id, concept_id) DO NOTHING`,
+      [userId, concept.id, score, last, JSON.stringify(history)],
+    );
+  }
+  return count;
 }
 
 export async function enrollUser(userId: string): Promise<void> {

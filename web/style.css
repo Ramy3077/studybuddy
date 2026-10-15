@@ -421,3 +421,14 @@ kbd { font-family: "IBM Plex Mono", monospace; font-size: 0.78em; padding: 1px 6
 .demo-box { display: grid; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 .demo-box .btn { width: 100%; }
 .linkish { background: none; border: 0; padding: 0; color: var(--amber); text-decoration: underline; cursor: pointer; font: inherit; }
+
+/* ---- landing: what it is ---- */
+.why-mini { margin: 22px 0 0; padding: 16px 18px; max-width: 40ch; background: var(--paper); color: var(--paper-ink); border: 1px solid color-mix(in srgb, var(--amber) 24%, var(--line)); border-radius: 12px; box-shadow: var(--shadow-amber); }
+.why-mini .wm-q { font-family: "Newsreader", serif; font-size: 0.95rem; margin: 6px 0 12px; opacity: .85; }
+.why-mini .cite blockquote { font-size: 0.98rem; margin-top: 6px; }
+.btn.big { padding: 14px 18px; font-size: 0.9rem; }
+.guest-sub { margin: 0; text-align: center; }
+.auth-card .demo-box { margin-top: 0; padding-top: 0; border-top: 0; margin-bottom: 4px; }
+.or-line { display: flex; align-items: center; gap: 12px; margin: 6px 0 14px; color: var(--text-3); font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; letter-spacing: .1em; text-transform: uppercase; }
+.or-line::before, .or-line::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.demo-sample { color: var(--text-3); font-size: 0.84rem; margin: 10px 0 0; }

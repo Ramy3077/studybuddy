@@ -55,10 +55,24 @@
         <div class="auth-hero">
           <svg class="mark big" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 11 4a6.6 6.6 0 0 0 9.5 10.5Z"/><circle cx="17.2" cy="6.6" r="1.1"/></svg>
           <h1 class="display">Studybuddy</h1>
-          <p class="lede">Source-grounded revision for the small hours. Every answer traced back to the exact passage in your notes that taught it.</p>
-          <p class="demo-note">This demo runs on a small set of original ML notes (linear regression, gradient descent, overfitting, k-means) written for it.</p>
+          <p class="lede">Exam revision that quotes your own notes back at you. Get a question wrong and it shows the exact passage that answers it.</p>
+          <figure class="why-mini" aria-label="Example of the explanation shown after a wrong answer">
+            <p class="why-kicker">Why you missed it</p>
+            <p class="wm-q">Very low training loss, much higher test loss. Most likely cause?</p>
+            <div class="cite">
+              <div class="lbl">From your notes</div>
+              <div class="loc">Week 3 &middot; Overfitting and Underfitting</div>
+              <blockquote>&ldquo;A model with a very low training loss and a much higher test loss is memorising rather than learning.&rdquo;</blockquote>
+            </div>
+          </figure>
+          <p class="demo-note">The demo runs on a small set of original ML notes written for it.</p>
         </div>
         <form class="card auth-card" id="auth-form" autocomplete="on">
+          <div class="demo-box" id="demo-box" hidden>
+            <button class="btn primary big" id="guest" type="button" hidden>Try the demo, no sign-up</button>
+            <p class="hint guest-sub" id="guest-sub" hidden>Opens with some topics already studied, so you can look around.</p>
+          </div>
+          <p class="or-line" id="or-line" hidden><span>or log in</span></p>
           <label class="field">
             <span>Email or username</span>
             <input id="email" type="text" autocomplete="username" placeholder="you@example.com" />
@@ -72,13 +86,10 @@
             <input id="display_name" type="text" value="Student" autocomplete="name" />
           </label>
           <div class="auth-actions">
-            <button class="btn primary" id="login" type="submit">Log in</button>
+            <button class="btn ghost" id="login" type="submit">Log in</button>
             <button class="btn ghost" id="signup" type="button">Sign up</button>
           </div>
-          <div class="demo-box" id="demo-box" hidden>
-            <button class="btn primary" id="guest" type="button" hidden>Try the demo, no sign-up</button>
-            <p class="hint" id="demo-creds" hidden>Or log in with the demo account: <code id="demo-email"></code> / <code id="demo-pass"></code> <button class="linkish" id="demo-fill" type="button">fill in</button></p>
-          </div>
+            <p class="hint creds" id="demo-creds" hidden>Or log in with the demo account: <code id="demo-email"></code> / <code id="demo-pass"></code> <button class="linkish" id="demo-fill" type="button">fill in</button></p>
           <p id="auth-error" class="error-text" role="alert"></p>
         </form>
       </div>
@@ -88,7 +99,7 @@
     <section class="screen" id="screen-dashboard" hidden>
       <header class="screen-head">
         <p class="eyebrow" id="greeting">Your desk</p>
-        <h2 class="display screen-title">Tonight's revision</h2>
+        <h2 class="display screen-title" id="screen-title">Tonight's revision</h2>
       </header>
       <div id="dash-body"></div>
     </section>

@@ -13,7 +13,7 @@ import { rateLimit } from './ratelimit.js';
 import { selectQuestions } from '../quiz/select.js';
 import { gradeAndRecord } from '../quiz/grade.js';
 import { buildWhyContext, streamWhy } from '../quiz/why.js';
-import { enrollUser, GUEST_EMAIL_DOMAIN } from '../demo/seed.js';
+import { enrollUser, seedGuestProgress, GUEST_EMAIL_DOMAIN } from '../demo/seed.js';
 
 type Env = { Variables: AuthVars };
 
@@ -158,6 +158,11 @@ export function createApp() {
     );
     const id = rows[0]!.id;
     await enrollUser(id);
+    try {
+      await seedGuestProgress(id);
+    } catch (e) {
+      console.error('guest progress seed failed:', e); // an empty desk beats no guest login
+    }
     const token = signJwt({ sub: id, email });
     return c.json({ token, user: { id, email, display_name } });
   });
