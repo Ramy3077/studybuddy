@@ -11,7 +11,7 @@ export class AnthropicLlmProvider implements LlmProvider {
 
   constructor(
     private apiKey: string,
-    private model = 'claude-sonnet-4-6',
+    private model = 'claude-sonnet-5-5',
     private baseUrl = 'https://api.anthropic.com',
   ) {}
 

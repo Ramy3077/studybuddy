@@ -98,7 +98,7 @@ export const config = {
   embeddingProvider: str('EMBEDDING_PROVIDER', hasOpenAI ? 'openai' : 'mock') as 'openai' | 'mock',
   llmProvider: str('LLM_PROVIDER', hasAnthropic ? 'anthropic' : 'mock') as 'anthropic' | 'mock',
   embeddingModel: str('EMBEDDING_MODEL', 'text-embedding-3-small'),
-  llmModel: str('LLM_MODEL', 'claude-sonnet-4-6'),
+  llmModel: str('LLM_MODEL', 'claude-sonnet-5-5'),
   embeddingDim: 1536,
 
   openaiApiKey: optional('OPENAI_API_KEY'),

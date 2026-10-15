@@ -15,7 +15,7 @@ const state = {
 
 function safeParse(s, fallback) { try { return s ? JSON.parse(s) : fallback; } catch { return fallback; } }
 function migrateSettings(s) {
-  return { byok: !!s.byok, key: s.key || '', model: s.model || 'claude-sonnet-4-6', theme: s.theme || 'dark', exam: s.exam || '' };
+  return { byok: !!s.byok, key: s.key || '', model: s.model || 'claude-sonnet-5-5', theme: s.theme || 'dark', exam: s.exam || '' };
 }
 function saveSettingsObj() { localStorage.setItem('sb_settings', JSON.stringify(state.settings)); }
 
@@ -448,7 +448,7 @@ async function streamByok(ctx) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': state.settings.key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({ model: state.settings.model || 'claude-sonnet-4-6', max_tokens: 600, stream: true, system: 'Explain using ONLY the provided passages; cite their labels. No invented facts or links.', messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model: state.settings.model || 'claude-sonnet-5-5', max_tokens: 600, stream: true, system: 'Explain using ONLY the provided passages; cite their labels. No invented facts or links.', messages: [{ role: 'user', content }] }),
   });
   if (!res.ok) throw new Error(`BYOK error ${res.status}. Check your key in Settings.`);
   await parseSse(res.body, (ev, data) => {
@@ -531,14 +531,14 @@ async function loadLeaderboard() {
 function loadSettings() {
   $('byok-enabled').checked = !!state.settings.byok;
   $('byok-key').value = state.settings.key || '';
-  $('byok-model').value = state.settings.model || 'claude-sonnet-4-6';
+  $('byok-model').value = state.settings.model || 'claude-sonnet-5-5';
   $('exam-date').value = state.settings.exam || '';
   document.querySelectorAll('[data-theme-set]').forEach((b) => b.classList.toggle('active', b.dataset.themeSet === state.settings.theme));
 }
 function saveSettings() {
   state.settings.byok = $('byok-enabled').checked;
   state.settings.key = $('byok-key').value.trim();
-  state.settings.model = $('byok-model').value.trim() || 'claude-sonnet-4-6';
+  state.settings.model = $('byok-model').value.trim() || 'claude-sonnet-5-5';
   state.settings.exam = $('exam-date').value || '';
   saveSettingsObj();
   $('settings-saved').textContent = 'Saved. Your key stays in this browser only.';
