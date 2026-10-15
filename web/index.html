@@ -10,8 +10,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" media="print" onload="this.media='all'" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
+  </noscript>
+  <script>
+    /* Paint the right shell before app.js loads: signed-in users must not flash the login. */
+    try { if (localStorage.getItem('sb_token')) document.documentElement.classList.add('has-token'); } catch (e) {}
+  </script>
 
   <link rel="stylesheet" href="/style.css" />
 </head>
@@ -158,16 +166,6 @@
         <div class="result" id="result" hidden>
           <div class="verdict" id="verdict"></div>
           <p class="feedback" id="feedback"></p>
-          <details class="reveal-answer" id="reveal">
-            <summary>Reference answer</summary>
-            <p class="ref" id="correct-answer"></p>
-            <p class="muted small" id="explanation"></p>
-          </details>
-          <div class="result-actions">
-            <button class="btn amber-ghost" id="why" hidden>✦ Why?</button>
-            <button class="btn primary" id="next">Next →</button>
-          </div>
-
           <!-- why panel : signature -->
           <section class="why-panel" id="why-box" hidden aria-live="polite">
             <header class="why-head">
@@ -178,6 +176,16 @@
             <div class="citations" id="why-citations"></div>
             <p class="why-status" id="why-status" hidden></p>
           </section>
+
+          <details class="reveal-answer" id="reveal">
+            <summary>Reference answer</summary>
+            <p class="ref" id="correct-answer"></p>
+            <p class="muted small" id="explanation"></p>
+          </details>
+          <div class="result-actions">
+            <button class="btn amber-ghost" id="why" hidden>✦ Why?</button>
+            <button class="btn primary" id="next">Next →</button>
+          </div>
         </div>
 
         <!-- session tracker -->
@@ -234,7 +242,10 @@
         <h3 class="card-title">Bring your own key</h3>
         <p class="muted small">When enabled, "Why?" explanations are generated <strong>in your browser</strong> with your Anthropic key. The key is stored only here and is <strong>never sent to the Studybuddy server</strong>.</p>
         <label class="check"><input type="checkbox" id="byok-enabled" /> <span>Use my Anthropic key for explanations</span></label>
-        <label class="field"><span>Anthropic API key</span><input id="byok-key" type="password" placeholder="sk-ant-..." autocomplete="off" /></label>
+        <form id="byok-form" onsubmit="return false" autocomplete="off">
+          <input type="text" name="username" autocomplete="username" value="anthropic-key" hidden aria-hidden="true" tabindex="-1" />
+          <label class="field"><span>Anthropic API key</span><input id="byok-key" type="password" placeholder="sk-ant-..." autocomplete="off" /></label>
+        </form>
         <label class="field"><span>Model</span><input id="byok-model" type="text" value="claude-sonnet-4-6" /></label>
         <button class="btn primary" id="save-settings">Save preferences</button>
         <p class="muted small" id="settings-saved" role="status"></p>

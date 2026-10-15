@@ -348,7 +348,7 @@ function applyGrade(r) {
   $('explanation').textContent = r.explanation || '';
   renderMath($('correct-answer')); renderMath($('explanation'));
   $('why').hidden = !!r.is_correct; // why only offered when wrong (and server-gated)
-  if (!r.is_correct) explainWhy(); // open the grounded explanation straight away
+  $('reveal').open = false;
 
   // session
   state.session.correct += r.is_correct ? 1 : 0;
@@ -358,7 +358,12 @@ function applyGrade(r) {
   const tick = $('set-ticks').children[state.session.idx]; if (tick) { tick.className = 'done'; }
 
   $('result').hidden = false;
-  $('next').focus();
+  $('next').focus({ preventScroll: true });
+  if (!r.is_correct) {
+    // open the grounded explanation straight away, whatever the question type, and bring it on screen
+    explainWhy();
+    try { $('why-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch { /* old browsers */ }
+  }
 }
 function nextQuestion() {
   if (!state.session) { startSession(); return; }
@@ -551,6 +556,7 @@ mq.addEventListener('change', () => { if (state.settings.theme === 'auto') apply
 
 /* ============================ RENDER / WIRE ============================ */
 function render() {
+  document.documentElement.classList.remove('has-token'); // JS now owns which screen shows
   const authed = !!state.token;
   $('topbar').hidden = !authed;
   applyTheme();
