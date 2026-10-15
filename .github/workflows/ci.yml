@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: studybuddy_owner
+          POSTGRES_PASSWORD: owner_pw
+          POSTGRES_DB: studybuddy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U studybuddy_owner -d studybuddy"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://studybuddy_owner:owner_pw@localhost:5432/studybuddy
+      APP_DATABASE_URL: postgresql://studybuddy_app:app_pw@localhost:5432/studybuddy
+      # CI-only signing secret for the migrate/seed step; tests set their own.
+      JWT_SECRET: ci-only-jwt-secret-not-used-anywhere-else-0123456789
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Creates the pgvector extension + RLS app role, then applies migrations.
+      - run: npm run migrate
+      - run: npm test

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark light" />
-  <title>Studybuddy — Midnight Almanac</title>
+  <title>StudyBuddy: grounded ML revision</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e8b35e' d='M20.5 14.5A8.5 8.5 0 1 1 11 4a6.6 6.6 0 0 0 9.5 10.5Z'/%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -55,12 +55,13 @@
         <div class="auth-hero">
           <svg class="mark big" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 11 4a6.6 6.6 0 0 0 9.5 10.5Z"/><circle cx="17.2" cy="6.6" r="1.1"/></svg>
           <h1 class="display">Studybuddy</h1>
-          <p class="lede">Source-grounded revision for the small hours. Every answer traced back to the exact lecture passage that taught it.</p>
+          <p class="lede">Source-grounded revision for the small hours. Every answer traced back to the exact passage in your notes that taught it.</p>
+          <p class="demo-note">This demo runs on a small set of original ML notes (linear regression, gradient descent, overfitting, k-means) written for it.</p>
         </div>
         <form class="card auth-card" id="auth-form" autocomplete="on">
           <label class="field">
             <span>Email or username</span>
-            <input id="email" type="text" autocomplete="username" placeholder="admin" />
+            <input id="email" type="text" autocomplete="username" placeholder="you@example.com" />
           </label>
           <label class="field">
             <span>Password</span>
@@ -74,7 +75,10 @@
             <button class="btn primary" id="login" type="submit">Log in</button>
             <button class="btn ghost" id="signup" type="button">Sign up</button>
           </div>
-          <p class="hint">Dev admin · <code>admin</code> / <code>admin</code></p>
+          <div class="demo-box" id="demo-box" hidden>
+            <button class="btn primary" id="guest" type="button" hidden>Try the demo, no sign-up</button>
+            <p class="hint" id="demo-creds" hidden>Or log in with the demo account: <code id="demo-email"></code> / <code id="demo-pass"></code> <button class="linkish" id="demo-fill" type="button">fill in</button></p>
+          </div>
           <p id="auth-error" class="error-text" role="alert"></p>
         </form>
       </div>
@@ -108,7 +112,7 @@
       <div class="card empty-state" id="quiz-empty" hidden>
         <div class="empty-glyph">✦</div>
         <h2 class="card-title">No questions yet</h2>
-        <p class="muted">Run the ingestion seed to build the question bank, then come back.</p>
+        <p class="muted">You have answered everything that is due. Come back later, or start a new set.</p>
       </div>
 
       <!-- session complete -->

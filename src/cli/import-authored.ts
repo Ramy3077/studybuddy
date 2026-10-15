@@ -1,10 +1,8 @@
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { config } from '../config.js';
 import { closePools } from '../db/pool.js';
 import { importAuthored } from '../pipelines/authored.js';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const defaultFile = join(here, '..', '..', 'db', 'authored-questions.json');
+const defaultFile = config.authoredQuestionsPath;
 
 async function main() {
   const file = process.argv[2] || defaultFile;

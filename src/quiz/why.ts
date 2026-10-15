@@ -20,6 +20,8 @@ export interface WhyContext {
   question_id: string;
   question: string;
   correct_answer: string;
+  /** Short authored rationale stored with the question (may be empty). */
+  explanation: string;
   concept_name: string;
   citations: WhyCitation[];
 }
@@ -46,12 +48,13 @@ export async function buildWhyContext(questionId: string): Promise<WhyContext> {
   const { rows } = await adminPool.query<{
     question: string;
     correct_answer: string;
+    explanation: string | null;
     evidence_quote: string;
     source_chunk_ids: string[];
     concept_name: string;
     module_id: string;
   }>(
-    `SELECT q.question, q.correct_answer, q.evidence_quote, q.source_chunk_ids,
+    `SELECT q.question, q.correct_answer, q.explanation, q.evidence_quote, q.source_chunk_ids,
             c.name AS concept_name, c.module_id
        FROM questions q JOIN concepts c ON c.id = q.concept_id
       WHERE q.id = $1`,
@@ -78,7 +81,10 @@ export async function buildWhyContext(questionId: string): Promise<WhyContext> {
     const hits = await vectorSearch(adminPool, emb, { moduleId: q.module_id, limit: 5 });
     for (const h of hits) {
       if (seen.has(h.id)) continue;
-      citations.push(toCitation(h, cleanVerbatimSpan(h.text, 8, 28)));
+      const quote = cleanVerbatimSpan(h.text, 8, 28);
+      // Overlapping chunks can yield the same passage; show each quote once.
+      if (citations.some((c) => c.quote.toLowerCase() === quote.toLowerCase())) continue;
+      citations.push(toCitation(h, quote));
       seen.add(h.id);
       if (citations.length >= 3) break;
     }
@@ -90,6 +96,7 @@ export async function buildWhyContext(questionId: string): Promise<WhyContext> {
     question_id: questionId,
     question: q.question,
     correct_answer: q.correct_answer,
+    explanation: q.explanation ?? '',
     concept_name: q.concept_name,
     citations,
   };
@@ -119,6 +126,7 @@ Explain why the correct answer is right, citing the source label(s) and pointing
       task: 'explain_why',
       payload: {
         correct_answer: ctx.correct_answer,
+        explanation: ctx.explanation,
         citations: ctx.citations.map((c) => ({ source_label: c.source_label, quote: c.quote })),
       },
     },

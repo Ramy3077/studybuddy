@@ -11,8 +11,9 @@ import { collapseWs, countWords, isCleanProse, stripInlineMarkup } from '../util
  *   - source_chunk_ids resolve to the real chunk containing the quote.
  *
  * This is how StudyBuddy ships a real question bank with no API key: the
- * questions in db/authored-questions.json were written by an LLM reading the
- * actual lecture chunks, and are re-validated here against the ingested text.
+ * questions in AUTHORED_QUESTIONS_PATH (default demo/questions.json) were
+ * written against the source notes, and are re-validated here against the
+ * ingested text.
  */
 
 interface AuthoredQuestion {

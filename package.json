@@ -1,7 +1,7 @@
 {
   "name": "studybuddy",
   "version": "1.0.0",
-  "description": "RAG-grounded exam-revision web app for a university Machine Learning module",
+  "description": "RAG-grounded exam revision: ingest notes, generate grounded questions, spaced-repetition quiz with cited explanations",
   "type": "module",
   "private": true,
   "engines": {
@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    "start:prod": "tsx src/cli/boot.ts",
     "migrate": "tsx src/cli/migrate.ts",
     "discover": "tsx src/cli/discover.ts",
     "ingest": "tsx src/cli/ingest.ts",

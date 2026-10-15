@@ -66,7 +66,7 @@ async function api(path, opts = {}) {
   if (state.token) headers.authorization = `Bearer ${state.token}`;
   const res = await fetch(path, Object.assign({}, opts, { headers }));
   const body = await res.json().catch(() => null);
-  if (res.status === 401) { logout(); throw new Error('Session expired — please sign in again.'); }
+  if (res.status === 401) { logout(); throw new Error('Session expired. Please sign in again.'); }
   if (!res.ok) throw new Error((body && body.error) || `Request failed (${res.status})`);
   return body;
 }
@@ -97,6 +97,28 @@ async function login() {
     const r = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: $('email').value.trim(), password: $('password').value }) });
     setSession(r.token, r.user);
   } catch (e) { $('auth-error').textContent = e.message; }
+}
+async function guest() {
+  $('auth-error').textContent = '';
+  $('guest').disabled = true;
+  try {
+    const r = await api('/api/auth/guest', { method: 'POST', body: '{}' });
+    setSession(r.token, r.user);
+  } catch (e) { $('auth-error').textContent = e.message; }
+  finally { $('guest').disabled = false; }
+}
+async function loadDemoInfo() {
+  try {
+    const d = await fetch('/api/demo').then((r) => r.json());
+    if (d.guests) $('guest').hidden = false;
+    if (d.account) {
+      $('demo-email').textContent = d.account.email;
+      $('demo-pass').textContent = d.account.password;
+      $('demo-creds').hidden = false;
+      $('demo-fill').onclick = () => { $('email').value = d.account.email; $('password').value = d.account.password; $('login').focus(); };
+    }
+    $('demo-box').hidden = !(d.guests || d.account);
+  } catch { /* demo info is optional */ }
 }
 function setSession(token, user) {
   state.token = token; state.user = user; state.session = null; state.current = null;
@@ -157,8 +179,8 @@ function buildDashboard({ days, avg, tested, weakest, totals }) {
   const countdown = days == null
     ? el('div', {}, el('button', { class: 'btn ghost', onClick: () => showScreen('settings') }, 'Set your exam date →'))
     : el('div', {}, el('div', { class: 'countdown-num display', text: days <= 0 ? '0' : String(days) }),
-        el('div', { class: 'countdown-label', text: days <= 0 ? 'exam is today — good luck' : days === 1 ? 'day until the exam' : 'days until the exam' }));
-  const ring = el('div', { class: 'ring', style: `--p:${avg}` }, el('b', { text: tested ? `${avg}%` : '—' }), el('span', { text: 'confidence' }));
+        el('div', { class: 'countdown-label', text: days <= 0 ? 'exam is today, good luck' : days === 1 ? 'day until the exam' : 'days until the exam' }));
+  const ring = el('div', { class: 'ring', style: `--p:${avg}` }, el('b', { text: tested ? `${avg}%` : '–' }), el('span', { text: 'confidence' }));
   grid.appendChild(el('div', { class: 'card dash-hero' }, countdown, ring));
 
   // revise next
@@ -410,7 +432,7 @@ async function streamByok(ctx) {
     headers: { 'x-api-key': state.settings.key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
     body: JSON.stringify({ model: state.settings.model || 'claude-sonnet-4-6', max_tokens: 600, stream: true, system: 'Explain using ONLY the provided passages; cite their labels. No invented facts or links.', messages: [{ role: 'user', content }] }),
   });
-  if (!res.ok) throw new Error(`BYOK error ${res.status} — check your key in Settings.`);
+  if (!res.ok) throw new Error(`BYOK error ${res.status}. Check your key in Settings.`);
   await parseSse(res.body, (ev, data) => {
     try { const j = JSON.parse(data); if (j.type === 'content_block_delta' && j.delta && j.delta.text) $('why-prose').textContent += j.delta.text; } catch {}
   });
@@ -461,7 +483,7 @@ function atlasRow(c) {
       el('dl', {},
         el('dt', { text: 'Confidence' }), el('dd', { text: `${pct}%${stale ? '' : ''}` }),
         el('dt', { text: 'Last tested' }), el('dd', { class: stale ? 'stale' : '', text: c.last_tested ? `${new Date(c.last_tested).toLocaleDateString()}${days != null ? ` · ${days} day${days === 1 ? '' : 's'} ago` : ''}` : 'never' }),
-        el('dt', { text: 'Decay' }), el('dd', { text: stale ? 'Fading — confidence decays toward 0 with a ~14-day half-life. Revisit to refresh it.' : 'Fresh — within the 14-day half-life window.' }))));
+        el('dt', { text: 'Decay' }), el('dd', { text: stale ? 'Fading: confidence decays toward 0 with a ~14-day half-life. Revisit to refresh it.' : 'Fresh: within the 14-day half-life window.' }))));
 }
 
 /* ============================ LEADERBOARD ============================ */
@@ -530,6 +552,7 @@ function wire() {
   // auth
   $('auth-form').addEventListener('submit', (e) => { e.preventDefault(); login(); });
   $('signup').onclick = signup;
+  $('guest').onclick = guest;
   $('logout').onclick = logout;
   // nav
   document.querySelectorAll('[data-nav]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); showScreen(b.dataset.nav); }));
@@ -572,3 +595,4 @@ function onQuizKey(e) {
 
 wire();
 render();
+loadDemoInfo();

@@ -84,7 +84,13 @@ export const config = {
   port: int('PORT', 8080),
 
   // Module / ingestion
+  // Defaults to the bundled, original demo corpus (see demo/corpus/README.md).
   vaultPath: str('VAULT_PATH', './demo/corpus'),
+  // Pre-authored question bank imported when no LLM key is configured.
+  authoredQuestionsPath: str('AUTHORED_QUESTIONS_PATH', './demo/questions.json'),
+  // Max words per notes chunk (overlap is ~15%). 880 suits long lecture notes;
+  // short notes like the demo corpus cite more precisely with ~120.
+  notesChunkWords: int('NOTES_CHUNK_WORDS', 880, 20),
   moduleSlug: str('MODULE_SLUG', 'ml'),
   moduleName: str('MODULE_NAME', 'Machine Learning'),
 
@@ -108,6 +114,15 @@ export const config = {
   // Auth brute-force guard: max login/signup attempts per minute, per IP and
   // (for login) per email.
   authRateLimitPerMin: int('AUTH_RATE_LIMIT_PER_MIN', 10),
+
+  // Public demo. When DEMO_EMAIL + DEMO_PASSWORD are set, the boot seed
+  // upserts that account and the login page shows the credentials. When
+  // DEMO_GUESTS=1, POST /api/auth/guest creates a throwaway enrolled account
+  // (rate-limited per IP and globally per hour).
+  demoEmail: optional('DEMO_EMAIL')?.toLowerCase(),
+  demoPassword: optional('DEMO_PASSWORD'),
+  demoGuests: optional('DEMO_GUESTS') === '1',
+  guestsPerHour: int('GUESTS_PER_HOUR', 200),
 } as const;
 
 export type AppConfig = typeof config;

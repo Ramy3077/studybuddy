@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import { streamSSE } from 'hono/streaming';
@@ -12,6 +13,7 @@ import { rateLimit } from './ratelimit.js';
 import { selectQuestions } from '../quiz/select.js';
 import { gradeAndRecord } from '../quiz/grade.js';
 import { buildWhyContext, streamWhy } from '../quiz/why.js';
+import { enrollUser, GUEST_EMAIL_DOMAIN } from '../demo/seed.js';
 
 type Env = { Variables: AuthVars };
 
@@ -124,6 +126,40 @@ export function createApp() {
     if (!user || !ok) return c.json({ error: 'invalid credentials' }, 401);
     const token = signJwt({ sub: user.id, email: email.toLowerCase() });
     return c.json({ token, user: { id: user.id, email: email.toLowerCase(), display_name: user.display_name } });
+  });
+
+  // ---- public demo --------------------------------------------------------
+  // Tells the login page whether to show the demo credentials / guest button.
+  // The demo password is intentionally public (it is printed on the page).
+  app.get('/api/demo', (c) =>
+    c.json({
+      account: config.demoEmail && config.demoPassword ? { email: config.demoEmail, password: config.demoPassword } : null,
+      guests: config.demoGuests,
+    }),
+  );
+
+  // One-click guest: a fresh, enrolled, throwaway account so visitors do not
+  // share progress or rate-limit buckets. Rate-limited per IP and globally;
+  // guests older than a few days are deleted by the boot seed.
+  app.post('/api/auth/guest', async (c) => {
+    if (!config.demoGuests) return c.json({ error: 'guest access is disabled' }, 404);
+    const rl = rateLimit(`guest:ip:${clientIp(c)}`, config.authRateLimitPerMin);
+    if (!rl.ok) return c.json({ error: 'too many guest sessions', retry_after: rl.retryAfter }, 429);
+    const global = rateLimit('guest:global', config.guestsPerHour, 60 * 60_000);
+    if (!global.ok) return c.json({ error: 'demo is busy, try the demo login instead', retry_after: global.retryAfter }, 429);
+    const tag = randomBytes(6).toString('hex');
+    const email = `guest-${tag}@${GUEST_EMAIL_DOMAIN}`;
+    const display_name = `Guest ${tag.slice(0, 4)}`;
+    // Random unusable password: guests can only ever use the token issued here.
+    const password_hash = await hashPassword(randomBytes(24).toString('hex'));
+    const { rows } = await adminPool.query<{ id: string }>(
+      `INSERT INTO profiles (email, password_hash, display_name) VALUES ($1,$2,$3) RETURNING id`,
+      [email, password_hash, display_name],
+    );
+    const id = rows[0]!.id;
+    await enrollUser(id);
+    const token = signJwt({ sub: id, email });
+    return c.json({ token, user: { id, email, display_name } });
   });
 
   // ---- authenticated routes ----------------------------------------------

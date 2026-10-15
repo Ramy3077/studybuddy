@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { chunkByWords } from './chunk.js';
 import { stripInlineMarkup } from '../util/text.js';
+import { config } from '../config.js';
 import type { PreparedChunk } from '../types.js';
 
 /** Strip Obsidian-flavoured markdown down to plain prose for embedding. */
@@ -58,7 +59,8 @@ export async function parseMarkdown(path: string): Promise<PreparedChunk[]> {
   const raw = await readFile(path, 'utf8');
   const cleaned = cleanObsidian(raw);
   const hs = headings(cleaned);
-  const spans = chunkByWords(cleaned, { maxWords: 880, overlapWords: 135, minWords: 20 });
+  const maxWords = config.notesChunkWords;
+  const spans = chunkByWords(cleaned, { maxWords, overlapWords: Math.round(maxWords * 0.15), minWords: 20 });
   return spans.map((sp, i) => ({
     chunkIndex: i,
     text: sp.text,

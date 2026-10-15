@@ -1,7 +1,9 @@
+import { ensureBootstrap } from '../db/bootstrap.js';
 import { migrate } from '../db/migrate.js';
 import { closePools } from '../db/pool.js';
 
-migrate()
+ensureBootstrap()
+  .then(() => migrate())
   .then(() => closePools())
   .then(() => {
     console.log('migrations complete');

@@ -154,22 +154,22 @@ export class MockLlmProvider implements LlmProvider {
     return {
       is_correct,
       feedback: is_correct
-        ? `Good — your answer covers the key points (coverage ${(recall * 100).toFixed(0)}%).`
-        : `Not quite — revisit the key facts. Expected ideas like: ${keyFacts.slice(0, 2).join('; ') || correct}.`,
+        ? `Good, your answer covers the key points (coverage ${(recall * 100).toFixed(0)}%).`
+        : `Not quite. Revisit the key facts. Expected ideas like: ${keyFacts.slice(0, 2).join('; ') || correct}.`,
     };
   }
 
   private *explainWhy(payload: Record<string, unknown>): Iterable<string> {
     const citations = (payload.citations as { source_label: string; quote: string }[]) ?? [];
     const correct = String(payload.correct_answer ?? '');
+    const explanation = String(payload.explanation ?? '').trim();
     const c = citations[0];
-    yield `The correct answer is grounded in the source material. `;
+    if (correct) yield `The correct answer is: ${correct.slice(0, 200).replace(/[.\s]+$/, '')}. `;
+    if (explanation) yield `${explanation} `;
     if (c) {
-      yield `In ${c.source_label}, the material states: "${c.quote}". `;
-      yield `That passage directly supports the expected answer`;
-      if (correct) yield `: ${correct.slice(0, 200)}`;
-      yield `. `;
+      yield `Your notes say this directly in ${c.source_label}: "${c.quote}" `;
+      if (citations.length > 1) yield `Related passages from your notes are listed below. `;
     }
-    yield `Re-read the cited passage above to see exactly where this is established.`;
+    yield `Re-read the highlighted passage, then try the question again later.`;
   }
 }

@@ -2,7 +2,7 @@
 #
 # Recommended workflow (host-run app, dockerised DB):
 #   docker compose up -d db
-#   npm install && npm run migrate && npm run seed -- --confirm
+#   npm install && npm run seed -- --confirm
 #   npm run start
 #
 # Or bring up the API container too with the `full` profile:
@@ -40,13 +40,14 @@ services:
       APP_DATABASE_URL: postgresql://studybuddy_app:app_pw@db:5432/studybuddy
       JWT_SECRET: ${JWT_SECRET:?set a strong JWT_SECRET, e.g. JWT_SECRET=$(openssl rand -hex 32)}
       PORT: 8080
+      NOTES_CHUNK_WORDS: 120
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-}
     ports:
       - "8080:8080"
-    command: ["npm", "run", "start"]
+    command: ["npm", "run", "start:prod"]
 
 volumes:
   studybuddy_pgdata:

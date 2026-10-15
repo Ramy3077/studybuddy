@@ -1,16 +1,14 @@
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { config } from '../config.js';
 import { closePools } from '../db/pool.js';
 import { migrate } from '../db/migrate.js';
+import { ensureBootstrap } from '../db/bootstrap.js';
 import { printDiscoveryReport } from './discover.js';
 import { ingestVault } from '../ingest/ingest.js';
 import { extractAllConcepts, publishConcepts } from '../pipelines/concepts.js';
 import { generateAllQuestions } from '../pipelines/questions.js';
 import { importAuthored } from '../pipelines/authored.js';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const authoredFile = join(here, '..', '..', 'db', 'authored-questions.json');
+const authoredFile = config.authoredQuestionsPath;
 
 /**
  * Full ingestion seed. Always prints the discovery report first; only proceeds
@@ -33,6 +31,7 @@ async function main() {
   }
 
   console.log('\n--- Applying migrations ---');
+  await ensureBootstrap();
   await migrate();
 
   console.log(`\n--- Ingesting vault (embeddings=${config.embeddingProvider}) ---`);

@@ -1,0 +1,505 @@
+{
+  "about": "Original demo question bank for the StudyBuddy public demo. Every evidence_quote must appear verbatim in demo/corpus or the importer drops the question.",
+  "results": [
+    {
+      "week": 1,
+      "concepts": [
+        {
+          "name": "Linear regression",
+          "description": "Predicting a continuous target as a weighted sum of features plus an intercept, fitted by minimising squared error.",
+          "key_facts": [
+            "Regression predicts a real value, classification predicts a category",
+            "Each weight is the change in prediction per unit of its feature with others held fixed",
+            "Residual = true target minus prediction",
+            "Sensitive to outliers because large residuals are squared"
+          ],
+          "difficulty": 2,
+          "questions": [
+            {
+              "type": "mcq",
+              "question": "What separates a regression problem from a classification problem?",
+              "options": [
+                "Regression outputs a real value; classification outputs a category",
+                "Regression needs labelled data; classification does not",
+                "Regression can only use one input feature",
+                "Classification always uses mean squared error"
+              ],
+              "correct_answer": "Regression outputs a real value; classification outputs a category",
+              "explanation": "Linear regression predicts a continuous number such as a price or a mark. Classification predicts which category an example belongs to.",
+              "evidence_quote": "The output is a real value, not a category, which is what separates regression from classification."
+            },
+            {
+              "type": "mcq",
+              "question": "In a multi-feature linear regression model, what does a single weight tell you?",
+              "options": [
+                "How much the prediction changes when that feature rises by one unit, with other features held fixed",
+                "The prediction when every feature is zero",
+                "The probability that the feature is relevant",
+                "The average value of that feature in the training set"
+              ],
+              "correct_answer": "How much the prediction changes when that feature rises by one unit, with other features held fixed",
+              "explanation": "A weight is a per-unit effect of its feature on the prediction, holding the others constant. The prediction at all-zero features is the intercept, not a weight.",
+              "evidence_quote": "Each weight says how much the prediction changes when that feature increases by one unit and every other feature is held fixed."
+            },
+            {
+              "type": "mcq",
+              "question": "You plot residuals against predictions and see them fan out as predictions grow. What does that suggest?",
+              "options": [
+                "The noise is not constant across the range, so a plain linear model may be a poor fit",
+                "The model is a perfect fit",
+                "The learning rate was too high",
+                "There are too few features to compute residuals"
+              ],
+              "correct_answer": "The noise is not constant across the range, so a plain linear model may be a poor fit",
+              "explanation": "Residuals that look like random noise around zero support a linear model. A curve or a fan shape points to non-linearity or non-constant noise.",
+              "evidence_quote": "If they curve or fan out, the relationship is probably not linear, or the noise is not constant across the range."
+            },
+            {
+              "type": "free_form",
+              "question": "Why is linear regression fitted with mean squared error sensitive to outliers?",
+              "options": null,
+              "correct_answer": "Because the residuals are squared, a single large residual from an outlier grows much bigger and dominates the loss.",
+              "explanation": "Squaring magnifies large errors, so one outlier can pull the fitted line towards itself.",
+              "evidence_quote": "It is sensitive to outliers, because squaring a large residual makes it dominate the loss."
+            }
+          ]
+        },
+        {
+          "name": "Loss functions and least squares",
+          "description": "How a loss function scores model error, the difference between MSE and MAE, and when to use the normal equation versus gradient descent.",
+          "key_facts": [
+            "MSE squares residuals and punishes large errors heavily",
+            "MAE grows linearly so it is less sensitive to outliers",
+            "The normal equation is a closed-form solution for least squares",
+            "Report loss on a held-out test set to estimate real performance"
+          ],
+          "difficulty": 3,
+          "questions": [
+            {
+              "type": "mcq",
+              "question": "Why is mean absolute error less sensitive to outliers than mean squared error?",
+              "options": [
+                "It grows linearly with the error instead of quadratically",
+                "It ignores any residual larger than one",
+                "It is computed only on the test set",
+                "Its gradient is always zero near outliers"
+              ],
+              "correct_answer": "It grows linearly with the error instead of quadratically",
+              "explanation": "An outlier's error is added as-is under MAE, but squared under MSE, so it carries far less weight under MAE.",
+              "evidence_quote": "Because it grows linearly rather than quadratically, it is far less sensitive to outliers than mean squared error."
+            },
+            {
+              "type": "mcq",
+              "question": "When does the normal equation become a poor choice for fitting linear regression?",
+              "options": [
+                "When there are many thousands of features, because it inverts a matrix that grows with the feature count",
+                "When the dataset has fewer than 100 rows",
+                "When the loss is mean squared error",
+                "When the features have been standardised"
+              ],
+              "correct_answer": "When there are many thousands of features, because it inverts a matrix that grows with the feature count",
+              "explanation": "The closed-form solution needs a matrix inversion whose cost grows quickly with the number of features. Gradient descent scales better there.",
+              "evidence_quote": "so it becomes slow when there are many thousands of features. In that case an iterative method such as gradient descent is the usual choice"
+            },
+            {
+              "type": "mcq",
+              "question": "A model has very low training loss and much higher test loss. What is the most likely explanation?",
+              "options": [
+                "It is memorising the training data rather than learning the pattern",
+                "The test set is too large",
+                "It is underfitting",
+                "The loss function is not differentiable"
+              ],
+              "correct_answer": "It is memorising the training data rather than learning the pattern",
+              "explanation": "A large gap between training and test loss is the classic sign of memorisation, which the next topics call overfitting.",
+              "evidence_quote": "A model with a very low training loss and a much higher test loss is memorising rather than learning."
+            },
+            {
+              "type": "free_form",
+              "question": "What does a loss function do in model training?",
+              "options": null,
+              "correct_answer": "It turns how wrong the model is into a single number, and training searches for the parameters that minimise the average loss.",
+              "explanation": "Defining a loss turns learning into an optimisation problem.",
+              "evidence_quote": "A loss function turns \"how wrong is the model\" into a single number that training can minimise."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "concepts": [
+        {
+          "name": "Gradient descent",
+          "description": "Iteratively stepping parameters against the gradient of the loss; batch, stochastic and mini-batch variants; convergence behaviour.",
+          "key_facts": [
+            "Move parameters in the opposite direction of the gradient",
+            "Step size is the gradient times the learning rate",
+            "Mini-batch uses a small random subset, often 32 to 256 examples",
+            "Convex losses have a single global minimum"
+          ],
+          "difficulty": 3,
+          "questions": [
+            {
+              "type": "mcq",
+              "question": "In which direction does gradient descent move the parameters?",
+              "options": [
+                "Opposite to the gradient of the loss",
+                "Along the gradient of the loss",
+                "Perpendicular to the gradient",
+                "Towards the largest parameter"
+              ],
+              "correct_answer": "Opposite to the gradient of the loss",
+              "explanation": "The gradient points uphill, towards steepest increase. To reduce the loss you step the other way.",
+              "evidence_quote": "Gradient descent therefore moves the parameters in the opposite direction of the gradient."
+            },
+            {
+              "type": "mcq",
+              "question": "What is the main trade-off of stochastic gradient descent compared with batch gradient descent?",
+              "options": [
+                "Each step is cheap, but the path is noisy",
+                "Each step is exact, but very expensive",
+                "It cannot be used with mean squared error",
+                "It always converges to a worse minimum"
+              ],
+              "correct_answer": "Each step is cheap, but the path is noisy",
+              "explanation": "Updating after one example costs little per step, but a single example gives a rough estimate of the true gradient.",
+              "evidence_quote": "Stochastic gradient descent updates the parameters after every single example, which is cheap per step but makes the path noisy."
+            },
+            {
+              "type": "mcq",
+              "question": "Why is gradient descent guaranteed to reach the global minimum for linear regression with mean squared error (given a suitable learning rate)?",
+              "options": [
+                "The loss is convex, so there is only one minimum",
+                "Linear regression has no parameters to learn",
+                "Mean squared error is always zero at the start",
+                "The gradient is constant everywhere"
+              ],
+              "correct_answer": "The loss is convex, so there is only one minimum",
+              "explanation": "A convex loss has no local minima other than the global one, so going downhill always ends in the right place.",
+              "evidence_quote": "For a convex loss such as mean squared error in linear regression, there is only one minimum"
+            },
+            {
+              "type": "free_form",
+              "question": "How can the noise in mini-batch gradient estimates actually help training?",
+              "options": null,
+              "correct_answer": "Random variation in the gradient can push the parameters out of shallow local minima and saddle points.",
+              "explanation": "An exact gradient can get stuck where the surface is flat; noise can knock the parameters free.",
+              "evidence_quote": "Random variation in the gradient can push the parameters out of shallow local minima and saddle points"
+            }
+          ]
+        },
+        {
+          "name": "Learning rate and feature scaling",
+          "description": "Picking a learning rate, reading loss curves, learning rate schedules, and why scaling features speeds up gradient descent.",
+          "key_facts": [
+            "Too small a learning rate is slow; too large overshoots or diverges",
+            "A zigzagging or rising loss curve suggests the learning rate is too high",
+            "Unscaled features make a long narrow valley that slows gradient descent",
+            "Fit scaling statistics on the training set only"
+          ],
+          "difficulty": 2,
+          "questions": [
+            {
+              "type": "mcq",
+              "question": "Your training loss zigzags and then starts climbing. What is the most likely cause?",
+              "options": [
+                "The learning rate is too high",
+                "The learning rate is too low",
+                "The features are already standardised",
+                "The model has too few epochs"
+              ],
+              "correct_answer": "The learning rate is too high",
+              "explanation": "Overly large steps overshoot the minimum, so the loss bounces around or grows.",
+              "evidence_quote": "A curve that zigzags or climbs suggests the learning rate is too high."
+            },
+            {
+              "type": "mcq",
+              "question": "Why do many training runs reduce the learning rate over time?",
+              "options": [
+                "Large early steps cover ground quickly, and smaller later steps let the parameters settle into the minimum",
+                "A smaller learning rate always reaches a better minimum from the very start",
+                "The gradient grows over time, so the rate must shrink to keep steps the same",
+                "It removes the need for a validation set"
+              ],
+              "correct_answer": "Large early steps cover ground quickly, and smaller later steps let the parameters settle into the minimum",
+              "explanation": "A schedule gets the speed of big steps early and the precision of small steps late.",
+              "evidence_quote": "Large early steps cover ground quickly, and smaller later steps let the parameters settle into the minimum instead of jumping around it."
+            },
+            {
+              "type": "mcq",
+              "question": "When standardising features, where should the mean and standard deviation be computed?",
+              "options": [
+                "On the training set only, then applied to validation and test sets",
+                "On the test set, because it represents new data",
+                "On the full dataset including the test set",
+                "Separately on each set"
+              ],
+              "correct_answer": "On the training set only, then applied to validation and test sets",
+              "explanation": "Using test data to compute scaling statistics leaks information about the test set into training.",
+              "evidence_quote": "compute the scaling statistics on the training set only and then apply the same transformation to the validation and test sets"
+            },
+            {
+              "type": "free_form",
+              "question": "Why does feature scaling speed up gradient descent?",
+              "options": null,
+              "correct_answer": "Features with very different ranges make the loss surface a long narrow valley, so gradient descent zigzags. Scaling makes the valley rounder so it can head more directly to the minimum.",
+              "explanation": "Similar feature ranges give a better-conditioned loss surface.",
+              "evidence_quote": "Rescaling the features to similar ranges makes the valley rounder, so gradient descent can head more directly to the minimum."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "concepts": [
+        {
+          "name": "Overfitting and the bias-variance trade-off",
+          "description": "Underfitting versus overfitting, bias and variance as sources of error, and diagnosing which problem a model has.",
+          "key_facts": [
+            "Underfitting: too simple, bad on training and new data",
+            "Overfitting: learns noise, good on training but poor on new data",
+            "High bias leads to underfitting; high variance leads to overfitting",
+            "Compare training error with validation error to diagnose"
+          ],
+          "difficulty": 3,
+          "questions": [
+            {
+              "type": "mcq",
+              "question": "Which description matches a model with high variance?",
+              "options": [
+                "A slightly different training sample would produce a very different model",
+                "It assumes a straight line when the truth is curved",
+                "It performs equally badly on training and test data",
+                "It has no parameters to fit"
+              ],
+              "correct_answer": "A slightly different training sample would produce a very different model",
+              "explanation": "Variance is sensitivity to the particular training set. Wrong assumptions, like a straight line for a curve, are bias.",
+              "evidence_quote": "Variance is the error that comes from sensitivity to the particular training set"
+            },
+            {
+              "type": "mcq",
+              "question": "Training error and validation error are both high and close together. What should you try?",
+              "options": [
+                "More features or a more flexible model",
+                "Stronger regularisation",
+                "Fewer features",
+                "Stop training earlier"
+              ],
+              "correct_answer": "More features or a more flexible model",
+              "explanation": "High, similar errors mean the model is underfitting. It needs more capacity, not less.",
+              "evidence_quote": "If both are high and close together, the model is underfitting, so try more features or a more flexible model."
+            },
+            {
+              "type": "mcq",
+              "question": "What are the three components of expected test error in the bias-variance decomposition?",
+              "options": [
+                "Squared bias, variance and irreducible noise",
+                "Training error, validation error and test error",
+                "Bias, learning rate and number of epochs",
+                "Variance, inertia and the silhouette score"
+              ],
+              "correct_answer": "Squared bias, variance and irreducible noise",
+              "explanation": "Even a perfect model cannot remove the noise term, which is why test error never reaches zero on noisy data.",
+              "evidence_quote": "The expected test error is the sum of squared bias, variance and the irreducible noise in the data."
+            },
+            {
+              "type": "free_form",
+              "question": "Describe what it means for a model to overfit.",
+              "options": null,
+              "correct_answer": "The model is so flexible it learns the random noise in the training set, so it scores well on training data but poorly on unseen data.",
+              "explanation": "Overfitting is memorising noise instead of the underlying pattern.",
+              "evidence_quote": "A model overfits when it is so flexible that it also learns the random noise in the training set."
+            }
+          ]
+        },
+        {
+          "name": "Regularisation and cross-validation",
+          "description": "Penalising large weights with ridge (L2) and lasso (L1), tuning hyperparameters on a validation set, and k-fold cross-validation.",
+          "key_facts": [
+            "Regularisation adds a penalty on large weights to the loss",
+            "Ridge (L2) shrinks weights but rarely to exactly zero",
+            "Lasso (L1) can set weights exactly to zero, giving feature selection",
+            "Tune hyperparameters on validation data, never on the test set"
+          ],
+          "difficulty": 3,
+          "questions": [
+            {
+              "type": "mcq",
+              "question": "Which regularisation method can remove features from the model entirely?",
+              "options": [
+                "Lasso (L1), because it can drive some weights to exactly zero",
+                "Ridge (L2), because it squares the weights",
+                "Both equally, whenever lambda is positive",
+                "Neither; regularisation never changes which features are used"
+              ],
+              "correct_answer": "Lasso (L1), because it can drive some weights to exactly zero",
+              "explanation": "The L1 penalty pushes small weights all the way to zero. Ridge shrinks them but rarely to exactly zero.",
+              "evidence_quote": "Its penalty can drive some weights to exactly zero, which removes those features from the model entirely."
+            },
+            {
+              "type": "mcq",
+              "question": "What happens when the regularisation strength lambda is set very large?",
+              "options": [
+                "Every weight is pushed towards zero and the model underfits",
+                "The model overfits more",
+                "Regularisation is switched off",
+                "The training loss reaches zero"
+              ],
+              "correct_answer": "Every weight is pushed towards zero and the model underfits",
+              "explanation": "A huge penalty makes small weights the only priority, so the model can no longer fit the data.",
+              "evidence_quote": "a very large lambda pushes every weight towards zero and causes underfitting"
+            },
+            {
+              "type": "mcq",
+              "question": "Why should hyperparameters not be tuned on the test set?",
+              "options": [
+                "The test score would stop being an honest estimate of performance on new data",
+                "The test set is too small to train on",
+                "Hyperparameters only affect the training loss",
+                "It makes training slower"
+              ],
+              "correct_answer": "The test score would stop being an honest estimate of performance on new data",
+              "explanation": "Choosing settings by test score quietly fits them to the test set, so the score becomes optimistic.",
+              "evidence_quote": "must not be tuned on the test set, or the test score stops being an honest estimate"
+            },
+            {
+              "type": "free_form",
+              "question": "Explain how k-fold cross-validation works.",
+              "options": null,
+              "correct_answer": "Split the training data into k equal parts. Train k times, each time holding out a different part for validation and training on the rest, then average the k validation scores.",
+              "explanation": "Every example is used for validation exactly once, which gives a more reliable estimate on small datasets.",
+              "evidence_quote": "The model is trained k times, each time holding out a different part for validation and training on the rest."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "concepts": [
+        {
+          "name": "k-means clustering",
+          "description": "Unsupervised grouping by alternating nearest-centroid assignment and centroid updates to minimise within-cluster sum of squares.",
+          "key_facts": [
+            "Clustering is unsupervised: there are no labels",
+            "Assignment step: each point goes to its nearest centroid",
+            "Update step: each centroid moves to the mean of its points",
+            "Result depends on initialisation; k-means++ spreads starting centroids"
+          ],
+          "difficulty": 2,
+          "questions": [
+            {
+              "type": "mcq",
+              "question": "What happens in the update step of k-means?",
+              "options": [
+                "Each centroid moves to the mean of the points assigned to it",
+                "Each point moves to its nearest centroid",
+                "A new cluster is added",
+                "The two closest clusters are merged"
+              ],
+              "correct_answer": "Each centroid moves to the mean of the points assigned to it",
+              "explanation": "Assignment moves points between clusters; the update step moves the centroids.",
+              "evidence_quote": "In the update step, each centroid is moved to the mean of the points now assigned to it."
+            },
+            {
+              "type": "mcq",
+              "question": "Which quantity does k-means minimise?",
+              "options": [
+                "The within-cluster sum of squared distances to each point's centroid (inertia)",
+                "The number of clusters",
+                "The silhouette score",
+                "The distance between centroids"
+              ],
+              "correct_answer": "The within-cluster sum of squared distances to each point's centroid (inertia)",
+              "explanation": "Lower inertia means points sit closer to their own centroid, so clusters are tighter.",
+              "evidence_quote": "K-means minimises the within-cluster sum of squares, also called inertia."
+            },
+            {
+              "type": "mcq",
+              "question": "How does k-means++ improve on plain random initialisation?",
+              "options": [
+                "It spreads the starting centroids far apart",
+                "It chooses k automatically",
+                "It removes outliers before clustering",
+                "It guarantees the global minimum"
+              ],
+              "correct_answer": "It spreads the starting centroids far apart",
+              "explanation": "Well-separated starting centroids make it less likely that two centroids share one natural group.",
+              "evidence_quote": "use the k-means++ initialisation, which spreads the starting centroids far apart"
+            },
+            {
+              "type": "free_form",
+              "question": "What shapes of cluster does k-means handle badly, and why?",
+              "options": null,
+              "correct_answer": "Elongated or nested clusters, because k-means assumes round clusters of similar size and relies on distance to a single centre.",
+              "explanation": "One centre per cluster only describes compact, roughly spherical groups well.",
+              "evidence_quote": "K-means assumes clusters are roughly round and similar in size, because it relies on distance to a single centre."
+            }
+          ]
+        },
+        {
+          "name": "Choosing k and evaluating clusters",
+          "description": "Why inertia alone cannot pick k, the elbow method, the silhouette score, and using domain knowledge.",
+          "key_facts": [
+            "Inertia always decreases as k increases",
+            "Elbow method: pick k where the inertia curve bends",
+            "Silhouette ranges from -1 to 1; near 1 means well inside its cluster",
+            "Domain usefulness can outweigh the metric"
+          ],
+          "difficulty": 3,
+          "questions": [
+            {
+              "type": "mcq",
+              "question": "Why can't you choose k by picking the value with the lowest inertia?",
+              "options": [
+                "Inertia always goes down as k increases, so you would always pick the largest k",
+                "Inertia is undefined for k greater than 2",
+                "Inertia increases with k",
+                "Inertia ignores the distance between points"
+              ],
+              "correct_answer": "Inertia always goes down as k increases, so you would always pick the largest k",
+              "explanation": "More centroids always let points sit closer to one. With one cluster per point, inertia is zero.",
+              "evidence_quote": "Inertia always goes down as k increases, because more centroids mean every point can sit closer to one."
+            },
+            {
+              "type": "mcq",
+              "question": "A point has a negative silhouette score. What does that suggest?",
+              "options": [
+                "It may be assigned to the wrong cluster",
+                "It sits right at the centre of its cluster",
+                "It is exactly on the boundary between two clusters",
+                "The value of k is too small"
+              ],
+              "correct_answer": "It may be assigned to the wrong cluster",
+              "explanation": "Negative means the point is, on average, closer to the next cluster than to its own.",
+              "evidence_quote": "a negative score suggests it may be in the wrong cluster"
+            },
+            {
+              "type": "mcq",
+              "question": "In the elbow method, why does the inertia curve flatten after a certain k?",
+              "options": [
+                "Extra clusters only split groups that already belong together",
+                "The algorithm stops converging",
+                "Inertia starts to increase",
+                "The silhouette score becomes negative"
+              ],
+              "correct_answer": "Extra clusters only split groups that already belong together",
+              "explanation": "Once each real group has a centroid, more clusters give only small gains.",
+              "evidence_quote": "After a point the curve flattens, because extra clusters only split groups that already belong together."
+            },
+            {
+              "type": "free_form",
+              "question": "Why might a team choose four clusters even when a metric prefers eleven?",
+              "options": null,
+              "correct_answer": "Because domain knowledge matters: if the team can act on four segments but not eleven, four clusters are more useful for the task.",
+              "explanation": "Metrics guide the choice, but the clusters have to be useful.",
+              "evidence_quote": "If a marketing team can act on four customer segments but not on eleven, four may be the right answer even if a metric prefers eleven."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
