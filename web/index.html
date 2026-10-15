@@ -1,109 +1,234 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StudyBuddy — ML Revision</title>
+  <meta name="color-scheme" content="dark light" />
+  <title>Studybuddy — Midnight Almanac</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e8b35e' d='M20.5 14.5A8.5 8.5 0 1 1 11 4a6.6 6.6 0 0 0 9.5 10.5Z'/%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
+
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <header>
-    <h1>📚 StudyBuddy <small>· Machine Learning revision</small></h1>
-    <div id="userbar" hidden>
-      <span id="who"></span>
-      <button data-tab="quiz">Quiz</button>
-      <button data-tab="progress">Progress</button>
-      <button data-tab="leaderboard">Leaderboard</button>
-      <button data-tab="settings">Settings</button>
-      <button id="logout">Log out</button>
+  <!-- atmosphere -->
+  <div class="atmos" aria-hidden="true">
+    <div class="lamp"></div>
+    <div class="vignette"></div>
+    <div class="grain"></div>
+  </div>
+
+  <!-- toasts -->
+  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <header class="topbar" id="topbar" hidden>
+    <a class="brand" href="#" data-nav="dashboard" aria-label="Studybuddy home">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 11 4a6.6 6.6 0 0 0 9.5 10.5Z"/><circle cx="17.2" cy="6.6" r="1.1"/></svg>
+      <span class="wordmark">Studybuddy</span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Primary">
+      <button class="nav-link" data-nav="dashboard">Desk</button>
+      <button class="nav-link" data-nav="quiz">Revise</button>
+      <button class="nav-link" data-nav="progress">Atlas</button>
+      <button class="nav-link" data-nav="leaderboard">Ranks</button>
+      <button class="nav-link" data-nav="settings">Settings</button>
+    </nav>
+    <div class="topbar-right">
+      <button class="icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 11 4a6.6 6.6 0 0 0 9.5 10.5Z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>
+      </button>
+      <span class="who" id="who"></span>
+      <button class="btn ghost sm" id="logout">Sign out</button>
     </div>
   </header>
 
-  <main>
-    <!-- Auth -->
-    <section id="auth">
-      <div class="card">
-        <h2>Sign in</h2>
-        <p class="muted">New here? Pick an email + password (8+ chars) and click <b>Sign up</b>.</p>
-        <label>Email or username <input id="email" type="text" autocomplete="username" /></label>
-        <label>Password <input id="password" type="password" autocomplete="current-password" /></label>
-        <label>Display name (sign up) <input id="display_name" type="text" value="Student" /></label>
-        <div class="row">
-          <button id="signup">Sign up</button>
-          <button id="login" class="secondary">Log in</button>
+  <main id="main">
+    <!-- ============ AUTH ============ -->
+    <section class="screen auth-screen" id="screen-auth">
+      <div class="auth-wrap reveal">
+        <div class="auth-hero">
+          <svg class="mark big" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 11 4a6.6 6.6 0 0 0 9.5 10.5Z"/><circle cx="17.2" cy="6.6" r="1.1"/></svg>
+          <h1 class="display">Studybuddy</h1>
+          <p class="lede">Source-grounded revision for the small hours. Every answer traced back to the exact lecture passage that taught it.</p>
         </div>
-        <p class="muted">Dev admin login: <b>admin</b> / <b>admin</b> (local testing only).</p>
-        <p id="auth-error" class="error"></p>
-      </div>
-    </section>
-
-    <!-- Quiz -->
-    <section id="quiz" class="tab" hidden>
-      <div id="enroll-card" class="card" hidden>
-        <p>You're not enrolled in <b>Machine Learning</b> yet.</p>
-        <button id="enroll">Enrol in Machine Learning</button>
-      </div>
-      <div id="quiz-card" class="card" hidden>
-        <div class="qmeta">
-          <span id="q-concept" class="pill"></span>
-          <span id="q-reason" class="pill muted"></span>
-        </div>
-        <h2 id="q-text"></h2>
-        <form id="q-form"></form>
-        <div class="row">
-          <button id="submit">Submit answer</button>
-          <button id="skip" class="secondary">Skip</button>
-        </div>
-        <div id="result" hidden>
-          <p id="verdict"></p>
-          <p id="feedback" class="muted"></p>
-          <details id="reveal"><summary>Reference answer & explanation</summary>
-            <p><b>Answer:</b> <span id="correct-answer"></span></p>
-            <p id="explanation" class="muted"></p>
-          </details>
-          <button id="why" class="secondary" hidden>🔍 Why? (cite the source)</button>
-          <div id="why-box" class="why" hidden>
-            <div id="why-citations"></div>
-            <p id="why-prose"></p>
+        <form class="card auth-card" id="auth-form" autocomplete="on">
+          <label class="field">
+            <span>Email or username</span>
+            <input id="email" type="text" autocomplete="username" placeholder="admin" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+          </label>
+          <label class="field" id="name-field">
+            <span>Display name <em>(sign up)</em></span>
+            <input id="display_name" type="text" value="Student" autocomplete="name" />
+          </label>
+          <div class="auth-actions">
+            <button class="btn primary" id="login" type="submit">Log in</button>
+            <button class="btn ghost" id="signup" type="button">Sign up</button>
           </div>
-          <div class="row"><button id="next">Next question →</button></div>
+          <p class="hint">Dev admin · <code>admin</code> / <code>admin</code></p>
+          <p id="auth-error" class="error-text" role="alert"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="screen" id="screen-dashboard" hidden>
+      <header class="screen-head">
+        <p class="eyebrow" id="greeting">Your desk</p>
+        <h2 class="display screen-title">Tonight's revision</h2>
+      </header>
+      <div id="dash-body"></div>
+    </section>
+
+    <!-- ============ QUIZ ============ -->
+    <section class="screen quiz-screen" id="screen-quiz" hidden>
+      <!-- enroll gate -->
+      <div class="card enroll-card" id="enroll-card" hidden>
+        <h2 class="card-title">Not enrolled yet</h2>
+        <p class="muted">Enrol in <strong>Machine Learning</strong> to start revising.</p>
+        <button class="btn primary" id="enroll">Enrol in Machine Learning</button>
+      </div>
+
+      <!-- loading skeleton -->
+      <div class="card quiz-card skeleton-card" id="quiz-skeleton" hidden aria-hidden="true">
+        <div class="sk sk-tag"></div><div class="sk sk-line lg"></div><div class="sk sk-line"></div>
+        <div class="sk sk-opt"></div><div class="sk sk-opt"></div><div class="sk sk-opt"></div><div class="sk sk-opt"></div>
+      </div>
+
+      <!-- empty -->
+      <div class="card empty-state" id="quiz-empty" hidden>
+        <div class="empty-glyph">✦</div>
+        <h2 class="card-title">No questions yet</h2>
+        <p class="muted">Run the ingestion seed to build the question bank, then come back.</p>
+      </div>
+
+      <!-- session complete -->
+      <div class="card session-summary" id="session-summary" hidden>
+        <p class="eyebrow">Set complete</p>
+        <div class="summary-stat"><span class="summary-num display" id="sum-score">0/0</span><span class="summary-label">correct</span></div>
+        <p class="muted" id="sum-detail"></p>
+        <button class="btn primary" id="new-set">Begin a new set</button>
+      </div>
+
+      <!-- the quiz card -->
+      <article class="card quiz-card" id="quiz-card" hidden>
+        <div class="q-meta">
+          <span class="tag concept" id="q-concept"></span>
+          <span class="difficulty" id="q-difficulty" aria-label="difficulty"></span>
+          <span class="tag reason" id="q-reason"></span>
+        </div>
+
+        <h2 class="q-text" id="q-text"></h2>
+
+        <form id="q-form" class="q-form"></form>
+
+        <div class="q-foot" id="q-foot">
+          <div class="q-actions">
+            <button class="btn primary" id="submit" type="button">Submit</button>
+            <button class="btn ghost" id="skip" type="button">Skip</button>
+          </div>
+          <p class="kbd-hint" id="kbd-hint"><kbd>1</kbd>–<kbd>4</kbd> select · <kbd>Enter</kbd> submit</p>
+        </div>
+
+        <!-- result -->
+        <div class="result" id="result" hidden>
+          <div class="verdict" id="verdict"></div>
+          <p class="feedback" id="feedback"></p>
+          <details class="reveal-answer" id="reveal">
+            <summary>Reference answer</summary>
+            <p class="ref" id="correct-answer"></p>
+            <p class="muted small" id="explanation"></p>
+          </details>
+          <div class="result-actions">
+            <button class="btn amber-ghost" id="why" hidden>✦ Why?</button>
+            <button class="btn primary" id="next">Next →</button>
+          </div>
+
+          <!-- why panel : signature -->
+          <section class="why-panel" id="why-box" hidden aria-live="polite">
+            <header class="why-head">
+              <span class="why-kicker">Grounded in the source</span>
+              <h3 class="why-title">Why this is the answer</h3>
+            </header>
+            <p class="why-prose" id="why-prose"></p>
+            <div class="citations" id="why-citations"></div>
+            <p class="why-status" id="why-status" hidden></p>
+          </section>
+        </div>
+
+        <!-- session tracker -->
+        <footer class="q-progress" id="q-progress">
+          <div class="ticks" id="set-ticks" aria-hidden="true"></div>
+          <span class="progress-label" id="progress-label">Question 1 of 10</span>
+          <span class="streak" id="streak" title="streak"></span>
+        </footer>
+      </article>
+    </section>
+
+    <!-- ============ PROGRESS ============ -->
+    <section class="screen" id="screen-progress" hidden>
+      <header class="screen-head">
+        <p class="eyebrow">Your map of the module</p>
+        <h2 class="display screen-title">Concept atlas</h2>
+      </header>
+      <p class="progress-totals" id="progress-totals"></p>
+      <div id="progress-body"></div>
+    </section>
+
+    <!-- ============ LEADERBOARD ============ -->
+    <section class="screen" id="screen-leaderboard" hidden>
+      <header class="screen-head">
+        <p class="eyebrow">Server-verified · derived from graded attempts</p>
+        <h2 class="display screen-title">The ranks</h2>
+      </header>
+      <div id="leaderboard-body"></div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="screen" id="screen-settings" hidden>
+      <header class="screen-head">
+        <p class="eyebrow">Preferences</p>
+        <h2 class="display screen-title">Settings</h2>
+      </header>
+
+      <div class="card settings-card">
+        <h3 class="card-title">Appearance</h3>
+        <div class="seg" role="radiogroup" aria-label="Theme">
+          <button class="seg-btn" data-theme-set="dark" role="radio">Midnight</button>
+          <button class="seg-btn" data-theme-set="light" role="radio">Daylight</button>
+          <button class="seg-btn" data-theme-set="auto" role="radio">Auto</button>
         </div>
       </div>
-      <p id="quiz-empty" class="muted" hidden>No questions available. Run the ingestion seed first.</p>
-    </section>
 
-    <!-- Progress -->
-    <section id="progress" class="tab" hidden>
-      <div class="card">
-        <h2>Your confidence</h2>
-        <p id="progress-totals" class="muted"></p>
-        <table id="progress-table"><thead><tr><th>Concept</th><th>Week</th><th>Confidence</th><th>Last tested</th></tr></thead><tbody></tbody></table>
+      <div class="card settings-card">
+        <h3 class="card-title">Exam date</h3>
+        <p class="muted small">Powers the countdown on your desk.</p>
+        <label class="field"><span>Date</span><input id="exam-date" type="date" /></label>
       </div>
-    </section>
 
-    <!-- Leaderboard -->
-    <section id="leaderboard" class="tab" hidden>
-      <div class="card">
-        <h2>Leaderboard</h2>
-        <p class="muted">Server-authoritative — derived from graded attempts. Cannot be set by the client.</p>
-        <table id="lb-table"><thead><tr><th>#</th><th>Student</th><th>Correct</th><th>Answered</th><th>Accuracy</th></tr></thead><tbody></tbody></table>
-      </div>
-    </section>
-
-    <!-- Settings / BYOK -->
-    <section id="settings" class="tab" hidden>
-      <div class="card">
-        <h2>Settings</h2>
-        <h3>Bring your own key (optional)</h3>
-        <p class="muted">If set, "Why?" explanations are generated <b>in your browser</b> using your Anthropic key. The key is stored only in this browser's localStorage and is <b>never sent to the StudyBuddy server</b>.</p>
-        <label><input type="checkbox" id="byok-enabled" /> Use my Anthropic key for explanations</label>
-        <label>Anthropic API key <input id="byok-key" type="password" placeholder="sk-ant-..." /></label>
-        <label>Model <input id="byok-model" type="text" value="claude-sonnet-4-6" /></label>
-        <button id="save-settings">Save</button>
-        <p id="settings-saved" class="muted"></p>
+      <div class="card settings-card">
+        <h3 class="card-title">Bring your own key</h3>
+        <p class="muted small">When enabled, "Why?" explanations are generated <strong>in your browser</strong> with your Anthropic key. The key is stored only here and is <strong>never sent to the Studybuddy server</strong>.</p>
+        <label class="check"><input type="checkbox" id="byok-enabled" /> <span>Use my Anthropic key for explanations</span></label>
+        <label class="field"><span>Anthropic API key</span><input id="byok-key" type="password" placeholder="sk-ant-..." autocomplete="off" /></label>
+        <label class="field"><span>Model</span><input id="byok-model" type="text" value="claude-sonnet-4-6" /></label>
+        <button class="btn primary" id="save-settings">Save preferences</button>
+        <p class="muted small" id="settings-saved" role="status"></p>
       </div>
     </section>
   </main>
-  <script src="/app.js"></script>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+  <script defer src="/app.js"></script>
 </body>
 </html>
