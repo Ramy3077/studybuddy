@@ -167,7 +167,7 @@ export class MockLlmProvider implements LlmProvider {
     if (correct) yield `The correct answer is: ${correct.slice(0, 200).replace(/[.\s]+$/, '')}. `;
     if (explanation) yield `${explanation} `;
     if (c) {
-      yield `Your notes say this directly in ${c.source_label}: "${c.quote}" `;
+      yield `Your notes say this directly in ${c.source_label}: "${c.quote.replace(/[.\s]+$/, '')}." `;
       if (citations.length > 1) yield `Related passages from your notes are listed below. `;
     }
     yield `Re-read the highlighted passage, then try the question again later.`;

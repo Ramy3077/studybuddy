@@ -82,8 +82,9 @@ export async function buildWhyContext(questionId: string): Promise<WhyContext> {
     for (const h of hits) {
       if (seen.has(h.id)) continue;
       const quote = cleanVerbatimSpan(h.text, 8, 28);
-      // Overlapping chunks can yield the same passage; show each quote once.
-      if (citations.some((c) => c.quote.toLowerCase() === quote.toLowerCase())) continue;
+      // Overlapping chunks can yield the same (or a contained) passage; show it once.
+      const ql = quote.toLowerCase();
+      if (citations.some((c) => { const cl = c.quote.toLowerCase(); return cl.includes(ql) || ql.includes(cl); })) continue;
       citations.push(toCitation(h, quote));
       seen.add(h.id);
       if (citations.length >= 3) break;
